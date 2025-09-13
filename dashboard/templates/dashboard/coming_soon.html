@@ -1,0 +1,116 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Faculty Portal{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Top Navigation -->
+    <nav class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-graduation-cap text-white text-sm"></i>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h1 class="text-xl font-semibold text-gray-900">Faculty Portal</h1>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm text-gray-700">
+                        <span class="font-medium">{{ faculty.user.get_full_name|default:faculty.user.username }}</span>
+                        <span class="text-gray-500">({{ faculty.department }})</span>
+                    </div>
+                    <a href="{% url 'logout' %}" class="text-gray-600 hover:text-gray-800 transition duration-150">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white shadow-sm min-h-screen">
+            <nav class="mt-8">
+                <div class="px-4 space-y-2">
+                    <a href="{% url 'home' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition duration-150">
+                        <i class="fas fa-home mr-3"></i>
+                        Home
+                    </a>
+                    
+                    <a href="{% url 'results' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition duration-150">
+                        <i class="fas fa-chart-bar mr-3"></i>
+                        Results
+                    </a>
+                    
+                    <a href="{% url 'goal_set' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition duration-150">
+                        <i class="fas fa-bullseye mr-3"></i>
+                        Goal Set
+                    </a>
+                    
+                    <a href="{% url 'tool_assignment' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition duration-150">
+                        <i class="fas fa-tools mr-3"></i>
+                        Tool Assignment
+                    </a>
+                    
+                    <a href="{% url 'marks_entry' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition duration-150">
+                        <i class="fas fa-edit mr-3"></i>
+                        Marks Entry
+                    </a>
+                    
+                    <a href="{% url 'co_attainment' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition duration-150">
+                        <i class="fas fa-target mr-3"></i>
+                        CO Attainment
+                    </a>
+                    
+                    <a href="{% url 'co_po_mapping' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition duration-150">
+                        <i class="fas fa-sitemap mr-3"></i>
+                        CO-PO Mapping
+                    </a>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-8">
+            <div class="max-w-4xl mx-auto">
+                <div class="text-center">
+                    <div class="mx-auto h-32 w-32 bg-blue-100 rounded-full flex items-center justify-center mb-8">
+                        <i class="fas fa-tools text-blue-600 text-5xl"></i>
+                    </div>
+                    
+                    <h2 class="text-4xl font-bold text-gray-900 mb-4">{{ title }}</h2>
+                    <p class="text-xl text-gray-600 mb-8">This feature is coming soon!</p>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+                        <div class="flex items-center justify-center mb-4">
+                            <i class="fas fa-info-circle text-blue-600 text-2xl mr-3"></i>
+                            <h3 class="text-lg font-semibold text-blue-900">What's Coming</h3>
+                        </div>
+                        <p class="text-blue-800">
+                            We're working hard to bring you this feature. It will be available in the next update.
+                        </p>
+                    </div>
+                    
+                    <div class="flex justify-center space-x-4">
+                        <a href="{% url 'home' %}" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition duration-150">
+                            <i class="fas fa-home mr-2"></i>
+                            Back to Home
+                        </a>
+                        
+                        <a href="{% url 'results' %}" class="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition duration-150">
+                            <i class="fas fa-chart-bar mr-2"></i>
+                            View Results
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,412 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Results Dashboard - Faculty Portal{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- CSRF Token for AJAX requests -->
+    {% csrf_token %}
+    <!-- Header -->
+    <div class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Results Dashboard</h1>
+                    <p class="mt-1 text-sm text-gray-600">Comprehensive analysis and management of student results</p>
+                    {% if selected_subject %}
+                        <p class="mt-1 text-sm text-blue-600">
+                            <i class="fas fa-book mr-1"></i>
+                            Current Subject: {{ selected_subject.name }} ({{ selected_subject.code }})
+                        </p>
+                    {% elif selected_department %}
+                        <p class="mt-1 text-sm text-blue-600">
+                            <i class="fas fa-building mr-1"></i>
+                            Department: {{ selected_department.name }}
+                        </p>
+                    {% endif %}
+                </div>
+                <div class="flex space-x-3">
+                    <button onclick="downloadTemplate()" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <i class="fas fa-download mr-2"></i>
+                        Download Template
+                    </button>
+                    <button onclick="refreshAnalytics()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <i class="fas fa-sync-alt mr-2"></i>
+                        Refresh Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Upload Section -->
+        <div class="bg-white rounded-lg shadow-sm border mb-8">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Upload Results</h2>
+                <p class="mt-1 text-sm text-gray-600">Upload Excel file with student results</p>
+            </div>
+            <div class="px-6 py-4">
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                    <div class="text-center">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                        <div class="text-sm text-gray-600">
+                            <label for="excel-file" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                <span>Upload Excel file</span>
+                                <input id="excel-file" name="excel-file" type="file" accept=".xlsx,.xls" class="sr-only" onchange="handleFileUpload(this)">
+                            </label>
+                            <p class="pl-1">or drag and drop</p>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">Excel files only (.xlsx, .xls)</p>
+                    </div>
+                </div>
+                <div id="upload-progress" class="hidden mt-4">
+                    <div class="bg-blue-50 border border-blue-200 rounded-md p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <div class="w-4 h-4 bg-blue-400 rounded-full"></div>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-blue-700">Uploading and processing file...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
+                            <i class="fas fa-users text-blue-600"></i>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Total Students</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="total-students">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center">
+                            <i class="fas fa-check-circle text-green-600"></i>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Passed</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="pass-count">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-red-100 rounded-md flex items-center justify-center">
+                            <i class="fas fa-times-circle text-red-600"></i>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Failed</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="fail-count">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-yellow-100 rounded-md flex items-center justify-center">
+                            <i class="fas fa-chart-line text-yellow-600"></i>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Average Marks</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="average-marks">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Statistics -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Marks Distribution -->
+            <div class="bg-white rounded-lg shadow-sm border">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Marks Distribution</h3>
+                </div>
+                <div class="px-6 py-4">
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Highest Marks</span>
+                            <span class="text-lg font-semibold text-green-600" id="highest-marks">-</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Lowest Marks</span>
+                            <span class="text-lg font-semibold text-red-600" id="lowest-marks">-</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Pass Percentage</span>
+                            <span class="text-lg font-semibold text-blue-600" id="pass-percentage">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Course Breakdown -->
+            <div class="bg-white rounded-lg shadow-sm border">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Course Breakdown</h3>
+                </div>
+                <div class="px-6 py-4">
+                    <div id="course-breakdown" class="space-y-3">
+                        <!-- Course breakdown will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Results Table -->
+        <div class="bg-white rounded-lg shadow-sm border">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Student Results</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Roll No</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Marks</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody id="student-results-table" class="bg-white divide-y divide-gray-200">
+                        <!-- Student results will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
+                <div class="w-6 h-6 bg-blue-600 rounded-full"></div>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mt-4">Loading Analytics</h3>
+            <p class="text-sm text-gray-500 mt-2">Please wait while we fetch the latest data...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global variables
+let analyticsData = null;
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    loadAnalytics();
+});
+
+// Load analytics data
+async function loadAnalytics() {
+    showLoading();
+    try {
+        const response = await fetch('/api/results/analytics/');
+        if (response.ok) {
+            analyticsData = await response.json();
+            updateDashboard(analyticsData);
+        } else {
+            const error = await response.json();
+            showNotification('Error loading analytics: ' + error.error, 'error');
+        }
+    } catch (error) {
+        showNotification('Error loading analytics: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Update dashboard with analytics data
+function updateDashboard(data) {
+    // Update overview cards
+    document.getElementById('total-students').textContent = data.total_students || 0;
+    document.getElementById('pass-count').textContent = data.pass_count || 0;
+    document.getElementById('fail-count').textContent = data.fail_count || 0;
+    document.getElementById('average-marks').textContent = data.average_marks || 0;
+
+    // Update detailed statistics
+    document.getElementById('highest-marks').textContent = data.highest_marks || 0;
+    document.getElementById('lowest-marks').textContent = data.lowest_marks || 0;
+    document.getElementById('pass-percentage').textContent = (data.pass_percentage || 0) + '%';
+
+    // Update course breakdown
+    updateCourseBreakdown(data.per_course_breakdown);
+
+    // Update student results table
+    updateStudentResultsTable(data.student_results);
+}
+
+// Update course breakdown section
+function updateCourseBreakdown(courses) {
+    const container = document.getElementById('course-breakdown');
+    container.innerHTML = '';
+
+    if (courses.length === 0) {
+        container.innerHTML = '<p class="text-sm text-gray-500">No course data available</p>';
+        return;
+    }
+
+    courses.forEach(course => {
+        const courseDiv = document.createElement('div');
+        courseDiv.className = 'border rounded-lg p-3';
+        courseDiv.innerHTML = `
+            <div class="flex justify-between items-start mb-2">
+                <div>
+                    <h4 class="font-medium text-gray-900">${course.course_code}</h4>
+                    <p class="text-sm text-gray-600">${course.course_name}</p>
+                </div>
+                <span class="text-sm font-medium text-blue-600">${course.pass_percentage}%</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs text-gray-500">
+                <div>Students: ${course.total_students}</div>
+                <div>Avg: ${course.average_marks}</div>
+                <div>Pass: ${course.pass_count}</div>
+                <div>Fail: ${course.fail_count}</div>
+            </div>
+        `;
+        container.appendChild(courseDiv);
+    });
+}
+
+// Update student results table
+function updateStudentResultsTable(students) {
+    const tbody = document.getElementById('student-results-table');
+    tbody.innerHTML = '';
+
+    if (students.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No student results available</td></tr>';
+        return;
+    }
+
+    students.forEach(student => {
+        const row = document.createElement('tr');
+        const statusClass = student.status === 'Pass' ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
+        
+        row.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${student.roll_no}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${student.name}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <div>${student.course_code}</div>
+                <div class="text-xs text-gray-500">${student.course_name}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${student.marks}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusClass}">
+                    ${student.status}
+                </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${student.percentage}%</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Handle file upload
+function handleFileUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+    if (!allowedTypes.includes(file.type)) {
+        showNotification('Please select a valid Excel file (.xlsx or .xls)', 'error');
+        return;
+    }
+
+    // Show upload progress
+    document.getElementById('upload-progress').classList.remove('hidden');
+
+    // Upload file
+    const formData = new FormData();
+    formData.append('excel_file', file);
+
+    fetch('/api/results/upload/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('upload-progress').classList.add('hidden');
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            // Refresh analytics after successful upload
+            loadAnalytics();
+        } else {
+            showNotification('Upload failed: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        document.getElementById('upload-progress').classList.add('hidden');
+        showNotification('Upload failed: ' + error.message, 'error');
+    });
+
+    // Reset file input
+    input.value = '';
+}
+
+// Download template
+function downloadTemplate() {
+    window.open('/api/results/template/', '_blank');
+}
+
+// Refresh analytics
+function refreshAnalytics() {
+    loadAnalytics();
+}
+
+// Show loading overlay
+function showLoading() {
+    document.getElementById('loading-overlay').classList.remove('hidden');
+}
+
+// Hide loading overlay
+function hideLoading() {
+    document.getElementById('loading-overlay').classList.add('hidden');
+}
+
+// Get CSRF token
+function getCSRFToken() {
+    const token = document.querySelector('[name=csrfmiddlewaretoken]');
+    return token ? token.value : '';
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+    if (window.FacultyPortal && window.FacultyPortal.showNotification) {
+        window.FacultyPortal.showNotification(message, type);
+    } else {
+        alert(message);
+    }
+}
+</script>
+{% endblock %}
