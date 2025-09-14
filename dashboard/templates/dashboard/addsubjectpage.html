@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add New Subject</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap");
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f0f4f8;
+      }
+    </style>
+  </head>
+  <body class="flex flex-col items-center justify-center min-h-screen p-6">
+    <div class="bg-white p-10 rounded-2xl shadow-2xl max-w-2xl w-full">
+      <div class="text-center mb-10">
+        <h1
+          class="text-4xl font-extrabold text-indigo-700 tracking-tight leading-none mb-2"
+        >
+          Add New Subject
+        </h1>
+        <p class="text-md text-gray-500">
+          Please fill out the form to add a new subject.
+        </p>
+      </div>
+
+      <form
+        id="addSubjectForm"
+        method="post"
+        action="{% url 'addsubjectpage' %}"
+        class="space-y-6"
+      >
+        {% csrf_token %}
+        <!-- Department Dropdown -->
+        <div>
+          <label
+            for="department"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Department</label
+          >
+          <select
+            id="department"
+            name="department"
+            required
+            class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+            <option value="" disabled selected>Select a Department</option>
+            {% for dep in departments %}
+            <option value="{{ dep.id }}">{{ dep.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Year Input -->
+        <div>
+          <label for="year" class="block text-sm font-medium text-gray-700 mb-1"
+            >Year</label
+          >
+          <select
+            id="year"
+            name="year"
+            required
+            class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+            <option value="" disabled selected>Select Year</option>
+            {% for yval, ylabel in year_choices %}
+            <option value="{{ yval }}">{{ ylabel }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Scheme Dropdown -->
+        <div>
+          <label
+            for="scheme"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Scheme</label
+          >
+          <select
+            id="scheme"
+            name="scheme"
+            required
+            class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+            <option value="" disabled selected>Select a Scheme</option>
+            {% for sval, slabel in scheme_choices %}
+            <option value="{{ sval }}">{{ slabel }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Subject Name Input -->
+        <div>
+          <label
+            for="subjectName"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Subject Name</label
+          >
+          <input
+            type="text"
+            id="subjectName"
+            name="subjectName"
+            required
+            placeholder="e.g., Data Structures"
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+
+        <!-- Subject Code Input -->
+        <div>
+          <label
+            for="subjectCode"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Subject Code</label
+          >
+          <input
+            type="text"
+            id="subjectCode"
+            name="subjectCode"
+            required
+            placeholder="e.g., CS101"
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+
+        <!-- Save Button -->
+        <div class="flex justify-end">
+          <button
+            type="submit"
+            class="w-full md:w-auto px-6 py-3 bg-green-600 text-white font-semibold rounded-xl shadow-lg hover:bg-green-700 transition-all duration-200 transform hover:scale-105"
+          >
+            Save Subject
+          </button>
+        </div>
+      </form>
+
+      <div class="mt-8 text-center">
+        <a
+          href="{% url 'subjectspage' %}"
+          class="text-indigo-600 hover:underline"
+        >
+          <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

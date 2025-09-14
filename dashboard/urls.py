@@ -6,6 +6,9 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     
+
+
+
     # Main pages
     path('selection/', views.selection_view, name='selection'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
@@ -16,7 +19,11 @@ urlpatterns = [
     path('api/results/template/', views.download_excel_template, name='download_excel_template'),
     path('api/results/upload/', views.upload_excel_results, name='upload_excel_results'),
     path('api/results/analytics/', views.results_analytics_api, name='results_analytics'),
-    
+
+    # Subjectspage
+    path('subjectspage/', views.subjectspage_view, name='subjectspage'),
+    path('subjectspage/add/', views.addsubjectpage_view, name='addsubjectpage'),
+
     # Other tabs (placeholder)
     path('goal-set/', views.goal_set_view, name='goal_set'),
     path('tool-assignment/', views.tool_assignment_view, name='tool_assignment'),
