@@ -16,11 +16,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from dashboard import views as dashboard_views
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Root should force fresh sign-in each time
+    path('', dashboard_views.root_view, name='root'),
     path('', include('dashboard.urls')),
 ]
 

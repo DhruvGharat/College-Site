@@ -1,3 +1,4 @@
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -8,12 +9,112 @@ from django.db.models import Avg, Max, Min, Count
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from .models import Faculty, Department, Subject, Student, Result, FacultySelection
+
 from .forms import FacultyLoginForm, FacultySelectionForm
+
+from django.contrib.auth.decorators import login_required
+
+def root_view(request):
+    # Always start at a clean state: log out any existing session
+    if request.user.is_authenticated:
+        logout(request)
+    return redirect('login')
+
+@login_required
+def subjectspage_view(request):
+    try:
+        faculty = Faculty.objects.get(user=request.user)
+    except Faculty.DoesNotExist:
+        messages.error(request, 'Faculty profile not found.')
+        return redirect('login')
+
+    subjects = Subject.objects.filter(faculty=faculty).select_related('department').order_by('name')
+    return render(request, 'dashboard/subjectspage.html', { 'subjects': subjects })
+
+
+@login_required
+def addsubjectpage_view(request):
+    try:
+        faculty = Faculty.objects.get(user=request.user)
+    except Faculty.DoesNotExist:
+        messages.error(request, 'Faculty profile not found.')
+        return redirect('login')
+
+    if request.method == 'POST':
+        dept_id = request.POST.get('department')
+        year = request.POST.get('year')
+        scheme = request.POST.get('scheme')
+        name = request.POST.get('subjectName')
+        code = request.POST.get('subjectCode')
+
+        if not all([dept_id, year, scheme, name, code]):
+            messages.error(request, 'All fields are required.')
+            return redirect('addsubjectpage')
+
+        try:
+            department = Department.objects.get(id=int(dept_id))
+        except (Department.DoesNotExist, ValueError, TypeError):
+            messages.error(request, 'Invalid department selected.')
+            return redirect('addsubjectpage')
+
+        try:
+            year_val = int(year)
+            if year_val not in [1,2,3,4]:
+                raise ValueError()
+        except ValueError:
+            messages.error(request, 'Year must be 1, 2, 3, or 4.')
+            return redirect('addsubjectpage')
+
+        # Normalize scheme values to match model choices
+        scheme_map = {
+            'R19-20': 'R19-20',
+            'NEP': 'NEP',
+            'AUTONOMOUS': 'AUTONOMOUS',
+            'Autonomous': 'AUTONOMOUS',
+            'R 19-20': 'R19-20',
+        }
+        scheme_val = scheme_map.get(scheme, scheme)
+
+        try:
+            subject, created = Subject.objects.get_or_create(
+                code=code,
+                year=year_val,
+                scheme=scheme_val,
+                defaults={
+                    'name': name,
+                    'department': department,
+                    'credits': 3,
+                    'faculty': faculty,
+                }
+            )
+            if not created:
+                # Update details if already exists
+                subject.name = name
+                subject.department = department
+                subject.faculty = faculty
+                subject.save()
+                messages.info(request, 'Subject updated successfully.')
+            else:
+                messages.success(request, 'Subject added successfully.')
+            return redirect('subjectspage')
+        except Exception as e:
+            messages.error(request, f'Error saving subject: {str(e)}')
+            return redirect('addsubjectpage')
+
+    # GET
+    departments = Department.objects.all().order_by('name')
+    year_choices = Subject.YEAR_CHOICES
+    scheme_choices = Subject.SCHEME_CHOICES
+    return render(request, 'dashboard/addsubjectpage.html', {
+        'departments': departments,
+        'year_choices': year_choices,
+        'scheme_choices': scheme_choices,
+    })
 
 
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect('selection')
+        return redirect('subjectspage')
     
     if request.method == 'POST':
         print(f"POST request received: {request.POST}")  # Debug
@@ -32,8 +133,8 @@ def login_view(request):
                     faculty = Faculty.objects.get(user=user)
                     print(f"Faculty found: {faculty}")  # Debug
                     login(request, user)
-                    print("Login successful, redirecting to selection")  # Debug
-                    return redirect('selection')
+                    print("Login successful, redirecting to subjectspage")  # Debug
+                    return redirect('subjectspage')
                 except Faculty.DoesNotExist:
                     print("Faculty.DoesNotExist error")  # Debug
                     messages.error(request, 'Access denied. Faculty account required.')
