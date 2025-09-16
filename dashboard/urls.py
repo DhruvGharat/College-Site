@@ -23,6 +23,8 @@ urlpatterns = [
     # Subjectspage
     path('subjectspage/', views.subjectspage_view, name='subjectspage'),
     path('subjectspage/add/', views.addsubjectpage_view, name='addsubjectpage'),
+    path('subjectspage/<int:subject_id>/edit/', views.editsubjectpage_view, name='editsubjectpage'),
+    path('subjectspage/<int:subject_id>/delete/', views.deletesubject_view, name='deletesubject'),
 
     # Other tabs (placeholder)
     path('goal-set/', views.goal_set_view, name='goal_set'),

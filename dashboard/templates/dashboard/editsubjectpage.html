@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Subject</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="flex flex-col items-center justify-center min-h-screen p-6">
+    <div class="bg-white p-10 rounded-2xl shadow-2xl max-w-2xl w-full">
+      {% if messages %}
+      <div class="mb-6">
+        {% for message in messages %}
+          <div class="px-4 py-3 rounded-lg mb-2 text-sm {{ message.tags }} {% if message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200{% elif message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200{% else %}bg-indigo-50 text-indigo-800 border border-indigo-200{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <div class="text-center mb-10">
+        <h1 class="text-4xl font-extrabold text-indigo-700 tracking-tight leading-none mb-2">
+          Edit Subject
+        </h1>
+        <p class="text-md text-gray-500">Update the details and save your changes.</p>
+      </div>
+
+      <form id="editSubjectForm" method="post" action="{% url 'editsubjectpage' subject.id %}" class="space-y-6">
+        {% csrf_token %}
+        <!-- Department Dropdown -->
+        <div>
+          <label for="department" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+          <select id="department" name="department" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            {% for dep in departments %}
+              <option value="{{ dep.id }}" {% if subject.department.id == dep.id %}selected{% endif %}>{{ dep.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Year Input (Textbox) -->
+        <div>
+          <label for="year" class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+          <input type="text" id="year" name="year" required value="{{ subject.year }}" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+        </div>
+
+        <!-- Scheme Dropdown -->
+        <div>
+          <label for="scheme" class="block text-sm font-medium text-gray-700 mb-1">Scheme</label>
+          <select id="scheme" name="scheme" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            {% for sval, slabel in scheme_choices %}
+              <option value="{{ sval }}" {% if subject.scheme == sval %}selected{% endif %}>{{ slabel }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Subject Name Input -->
+        <div>
+          <label for="subjectName" class="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
+          <input type="text" id="subjectName" name="subjectName" required value="{{ subject.name }}" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+        </div>
+
+        <!-- Subject Code Input -->
+        <div>
+          <label for="subjectCode" class="block text-sm font-medium text-gray-700 mb-1">Subject Code</label>
+          <input type="text" id="subjectCode" name="subjectCode" required value="{{ subject.code }}" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+        </div>
+
+        <!-- Save Button -->
+        <div class="flex justify-end">
+          <button type="submit" class="w-full md:w-auto px-6 py-3 bg-green-600 text-white font-semibold rounded-xl shadow-lg hover:bg-green-700 transition-all duration-200 transform hover:scale-105">
+            Save Changes
+          </button>
+        </div>
+      </form>
+
+      <div class="mt-8 text-center">
+        <a href="{% url 'subjectspage' %}" class="text-indigo-600 hover:underline">
+          <i class="fas fa-arrow-left mr-2"></i>Back to Subjects
+        </a>
+      </div>
+    </div>
+  </body>
+</html>
