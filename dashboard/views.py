@@ -6,6 +6,10 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 from django.db.models import Avg, Max, Min, Count
+from django.db import IntegrityError
+import logging
+
+logger = logging.getLogger(__name__)
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from .models import Faculty, Department, Subject, Student, Result, FacultySelection
@@ -59,10 +63,10 @@ def addsubjectpage_view(request):
 
         try:
             year_val = int(year)
-            if year_val not in [1,2,3,4]:
+            if year_val <= 0:
                 raise ValueError()
         except ValueError:
-            messages.error(request, 'Year must be 1, 2, 3, or 4.')
+            messages.error(request, 'Year must be a positive number.')
             return redirect('addsubjectpage')
 
         # Normalize scheme values to match model choices
@@ -110,6 +114,101 @@ def addsubjectpage_view(request):
         'year_choices': year_choices,
         'scheme_choices': scheme_choices,
     })
+
+
+@login_required
+def editsubjectpage_view(request, subject_id: int):
+    # Ensure subject belongs to current faculty
+    try:
+        faculty = Faculty.objects.get(user=request.user)
+    except Faculty.DoesNotExist:
+        messages.error(request, 'Faculty profile not found.')
+        return redirect('login')
+
+    subject = get_object_or_404(Subject, id=subject_id)
+    if subject.faculty_id != faculty.id:
+        messages.error(request, 'You do not have permission to edit this subject.')
+        return redirect('subjectspage')
+
+    if request.method == 'POST':
+        dept_id = request.POST.get('department')
+        year = request.POST.get('year')
+        scheme = request.POST.get('scheme')
+        name = request.POST.get('subjectName')
+        code = request.POST.get('subjectCode')
+
+        if not all([dept_id, year, scheme, name, code]):
+            messages.error(request, 'All fields are required.')
+            return redirect('editsubjectpage', subject_id=subject.id)
+
+        try:
+            department = Department.objects.get(id=int(dept_id))
+        except (Department.DoesNotExist, ValueError, TypeError):
+            messages.error(request, 'Invalid department selected.')
+            return redirect('editsubjectpage', subject_id=subject.id)
+
+        try:
+            year_val = int(year)
+            if year_val <= 0:
+                raise ValueError()
+        except ValueError:
+            messages.error(request, 'Year must be a positive number.')
+            return redirect('editsubjectpage', subject_id=subject.id)
+
+        scheme_map = {
+            'R19-20': 'R19-20',
+            'NEP': 'NEP',
+            'AUTONOMOUS': 'AUTONOMOUS',
+            'Autonomous': 'AUTONOMOUS',
+            'R 19-20': 'R19-20',
+        }
+        scheme_val = scheme_map.get(scheme, scheme)
+
+        try:
+            # Apply updates
+            subject.name = name
+            subject.code = code
+            subject.department = department
+            subject.year = year_val
+            subject.scheme = scheme_val
+            subject.faculty = faculty
+            subject.save()
+            messages.success(request, 'Subject updated successfully.')
+            return redirect('subjectspage')
+        except IntegrityError:
+            messages.error(request, 'A subject with this Code/Year/Scheme already exists.')
+            return redirect('editsubjectpage', subject_id=subject.id)
+        except Exception as e:
+            messages.error(request, f'Error updating subject: {str(e)}')
+            return redirect('editsubjectpage', subject_id=subject.id)
+
+    # GET: render edit form with current values
+    departments = Department.objects.all().order_by('name')
+    scheme_choices = Subject.SCHEME_CHOICES
+    return render(request, 'dashboard/editsubjectpage.html', {
+        'subject': subject,
+        'departments': departments,
+        'scheme_choices': scheme_choices,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def deletesubject_view(request, subject_id: int):
+    try:
+        faculty = Faculty.objects.get(user=request.user)
+    except Faculty.DoesNotExist:
+        messages.error(request, 'Faculty profile not found.')
+        return redirect('login')
+
+    subject = get_object_or_404(Subject, id=subject_id)
+    if subject.faculty_id != faculty.id:
+        messages.error(request, 'You do not have permission to delete this subject.')
+        return redirect('subjectspage')
+
+    subject.delete()
+    messages.success(request, 'Subject deleted successfully.')
+    return redirect('subjectspage')
 
 
 def login_view(request):
