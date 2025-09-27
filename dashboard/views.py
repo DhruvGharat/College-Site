@@ -509,6 +509,11 @@ def upload_excel_results(request):
     try:
         # Read Excel file using openpyxl
         from openpyxl import load_workbook
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"Processing uploaded Excel file: {excel_file.name}, size: {excel_file.size} bytes")
+        
         wb = load_workbook(excel_file)
         ws = wb.active
         
@@ -516,6 +521,8 @@ def upload_excel_results(request):
         headers = []
         for cell in ws[1]:
             headers.append(cell.value)
+        
+        logger.info(f"Found headers: {headers}")
         
         # Validate headers
         required_headers = ['Roll No', 'Name', 'Course Code', 'Marks']
@@ -530,7 +537,68 @@ def upload_excel_results(request):
         course_code_idx = headers.index('Course Code')
         marks_idx = headers.index('Marks')
         
-        # Process data
+        # Pre-analyze data for summary statistics
+        total_rows = 0
+        valid_rows = 0
+        total_marks = 0
+        highest_mark = 0
+        lowest_mark = 100
+        course_data = {}
+        
+        # First pass - collect statistics
+        for row_num, row in enumerate(ws.iter_rows(min_row=2), 2):
+            try:
+                total_rows += 1
+                
+                # Extract data
+                roll_no = str(row[roll_no_idx].value).strip()
+                name = str(row[name_idx].value).strip()
+                course_code = str(row[course_code_idx].value).strip()
+                
+                # Validate marks
+                try:
+                    marks = float(row[marks_idx].value)
+                    if marks < 0 or marks > 100:
+                        errors.append(f'Row {row_num}: Marks must be between 0 and 100')
+                        continue
+                except (ValueError, TypeError):
+                    errors.append(f'Row {row_num}: Invalid marks value')
+                    continue
+                
+                valid_rows += 1
+                total_marks += marks
+                
+                # Update highest and lowest marks
+                highest_mark = max(highest_mark, marks)
+                lowest_mark = min(lowest_mark, marks)
+                
+                # Collect course statistics
+                if course_code not in course_data:
+                    course_data[course_code] = {
+                        'total': 0,
+                        'sum': 0,
+                        'pass': 0,
+                        'fail': 0
+                    }
+                
+                course_data[course_code]['total'] += 1
+                course_data[course_code]['sum'] += marks
+                
+                if marks >= 40:
+                    course_data[course_code]['pass'] += 1
+                else:
+                    course_data[course_code]['fail'] += 1
+                    
+            except Exception as e:
+                errors.append(f'Row {row_num}: {str(e)}')
+                continue
+        
+        # Calculate summary statistics
+        avg_marks = round(total_marks / valid_rows, 2) if valid_rows > 0 else 0
+        pass_count = sum(data['pass'] for data in course_data.values())
+        fail_count = sum(data['fail'] for data in course_data.values())
+        
+        # Process data for database
         created_count = 0
         updated_count = 0
         errors = []
@@ -584,17 +652,269 @@ def upload_excel_results(request):
                 errors.append(f'Row {row_num}: {str(e)}')
                 continue
         
+        # Prepare course breakdown for response
+        course_breakdown = []
+        for code, data in course_data.items():
+            try:
+                subject = Subject.objects.get(code=code)
+                course_name = subject.name
+            except Subject.DoesNotExist:
+                course_name = "Unknown Course"
+                
+            course_breakdown.append({
+                'course_code': code,
+                'course_name': course_name,
+                'total_students': data['total'],
+                'average_marks': round(data['sum'] / data['total'], 2) if data['total'] > 0 else 0,
+                'pass_count': data['pass'],
+                'fail_count': data['fail'],
+                'pass_percentage': round((data['pass'] / data['total']) * 100, 2) if data['total'] > 0 else 0
+            })
+        
+        # Return success response with analysis data
         return JsonResponse({
             'success': True,
             'message': f'Successfully processed {created_count} new results and updated {updated_count} existing results.',
             'created': created_count,
             'updated': updated_count,
-            'errors': errors[:10]  # Limit errors to first 10
+            'errors': errors[:10],  # Limit errors to first 10
+            'analysis': {
+                'total_rows': total_rows,
+                'valid_rows': valid_rows,
+                'total_students': valid_rows,
+                'pass_count': pass_count,
+                'fail_count': fail_count,
+                'average_marks': avg_marks,
+                'highest_marks': highest_mark,
+                'lowest_marks': lowest_mark,
+                'pass_percentage': round((pass_count / valid_rows) * 100, 2) if valid_rows > 0 else 0,
+                'per_course_breakdown': course_breakdown
+            }
         })
         
     except Exception as e:
+        logger.error(f"Error processing Excel file: {str(e)}", exc_info=True)
         return JsonResponse({'error': f'Error processing Excel file: {str(e)}'}, status=400)
 
+
+@login_required
+@require_http_methods(["POST"])
+def remove_results_file(request):
+    """Remove results file from database"""
+    try:
+        faculty = Faculty.objects.get(user=request.user)
+        
+        # Get selected subject
+        selected_subject_id = request.session.get('selected_subject')
+        if selected_subject_id:
+            # Delete results for the selected subject
+            deleted, _ = Result.objects.filter(subject_id=selected_subject_id).delete()
+            return JsonResponse({'success': True, 'message': f'Removed {deleted} results from database'})
+        else:
+            return JsonResponse({'error': 'No subject selected'}, status=400)
+            
+    except Exception as e:
+        logger.error(f"Error removing results: {str(e)}", exc_info=True)
+        return JsonResponse({'error': f'Error removing results: {str(e)}'}, status=500)
+
+@login_required
+@require_http_methods(["GET"])
+def download_analysis_excel(request):
+    """Download analysis results as Excel file"""
+    try:
+        faculty = Faculty.objects.get(user=request.user)
+        
+        # Get selected subject or all subjects for the faculty's department
+        selected_subject_id = request.session.get('selected_subject')
+        subjects = (Subject.objects.filter(id=selected_subject_id) if selected_subject_id 
+                   else Subject.objects.filter(department=faculty.department))
+        
+        if not subjects.exists():
+            return HttpResponse('No subjects found', status=404)
+            
+        # Get results for the selected subjects
+        results = Result.objects.filter(subject__in=subjects).select_related('student', 'subject')
+        
+        if not results.exists():
+            return HttpResponse('No results found', status=404)
+            
+        # Create workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Results Analysis"
+        
+        # Add headers
+        headers = ['Subject', 'Total Students', 'Pass Count', 'Fail Count', 'Pass %', 'Average Marks', 'Highest Marks', 'Lowest Marks']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+            cell.alignment = Alignment(horizontal="center")
+            
+        # Add summary data per subject
+        row = 2
+        for subject in subjects:
+            subject_results = results.filter(subject=subject)
+            if subject_results.exists():
+                total = subject_results.count()
+                pass_count = subject_results.filter(marks_obtained__gte=40).count()
+                fail_count = total - pass_count
+                pass_percentage = (pass_count / total * 100) if total > 0 else 0
+                avg_marks = subject_results.aggregate(Avg('marks_obtained'))['marks_obtained__avg'] or 0
+                highest_marks = subject_results.aggregate(Max('marks_obtained'))['marks_obtained__max'] or 0
+                lowest_marks = subject_results.aggregate(Min('marks_obtained'))['marks_obtained__min'] or 0
+                
+                data = [
+                    subject.name,
+                    total,
+                    pass_count,
+                    fail_count,
+                    f"{pass_percentage:.2f}%",
+                    f"{avg_marks:.2f}",
+                    highest_marks,
+                    lowest_marks
+                ]
+                
+                for col, value in enumerate(data, 1):
+                    ws.cell(row=row, column=col, value=value)
+                row += 1
+                
+        # Add overall summary
+        row += 1
+        ws.cell(row=row, column=1, value="Overall Summary").font = Font(bold=True)
+        row += 1
+        
+        total = results.count()
+        pass_count = results.filter(marks_obtained__gte=40).count()
+        fail_count = total - pass_count
+        pass_percentage = (pass_count / total * 100) if total > 0 else 0
+        avg_marks = results.aggregate(Avg('marks_obtained'))['marks_obtained__avg'] or 0
+        highest_marks = results.aggregate(Max('marks_obtained'))['marks_obtained__max'] or 0
+        lowest_marks = results.aggregate(Min('marks_obtained'))['marks_obtained__min'] or 0
+        
+        summary_headers = ['Metric', 'Value']
+        for col, header in enumerate(summary_headers, 1):
+            cell = ws.cell(row=row, column=col, value=header)
+            cell.font = Font(bold=True)
+        row += 1
+        
+        summary_data = [
+            ('Total Students', total),
+            ('Pass Count', pass_count),
+            ('Fail Count', fail_count),
+            ('Pass Percentage', f"{pass_percentage:.2f}%"),
+            ('Average Marks', f"{avg_marks:.2f}"),
+            ('Highest Marks', highest_marks),
+            ('Lowest Marks', lowest_marks)
+        ]
+        
+        for item in summary_data:
+            ws.cell(row=row, column=1, value=item[0])
+            ws.cell(row=row, column=2, value=item[1])
+            row += 1
+            
+        # Auto-adjust column widths
+        for column in ws.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 30)
+            ws.column_dimensions[column_letter].width = adjusted_width
+            
+        # Create response
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="results_analysis.xlsx"'
+        
+        # Save workbook to response
+        wb.save(response)
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error creating analysis Excel: {str(e)}", exc_info=True)
+        return HttpResponse(f'Error creating Excel file: {str(e)}', status=500)
+
+@login_required
+@require_http_methods(["GET"])
+def download_student_results(request):
+    """Download student results as Excel file"""
+    try:
+        faculty = Faculty.objects.get(user=request.user)
+        
+        # Get selected subject or all subjects for the faculty's department
+        selected_subject_id = request.session.get('selected_subject')
+        subjects = (Subject.objects.filter(id=selected_subject_id) if selected_subject_id 
+                   else Subject.objects.filter(department=faculty.department))
+        
+        if not subjects.exists():
+            return HttpResponse('No subjects found', status=404)
+            
+        # Get results for the selected subjects
+        results = Result.objects.filter(subject__in=subjects).select_related('student', 'subject')
+        
+        if not results.exists():
+            return HttpResponse('No results found', status=404)
+            
+        # Create workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Student Results"
+        
+        # Add headers
+        headers = ['Roll No', 'Student Name', 'Course Code', 'Course Name', 'Marks', 'Status', 'Percentage']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+            cell.alignment = Alignment(horizontal="center")
+            
+        # Add student results
+        for idx, result in enumerate(results, 2):
+            row_data = [
+                result.student.roll_number,
+                result.student.name,
+                result.subject.code,
+                result.subject.name,
+                result.marks_obtained,
+                'Pass' if result.marks_obtained >= 40 else 'Fail',
+                f"{result.percentage:.2f}%"
+            ]
+            
+            for col, value in enumerate(row_data, 1):
+                ws.cell(row=idx, column=col, value=value)
+                
+        # Auto-adjust column widths
+        for column in ws.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 30)
+            ws.column_dimensions[column_letter].width = adjusted_width
+            
+        # Create response
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="student_results.xlsx"'
+        
+        # Save workbook to response
+        wb.save(response)
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error creating student results Excel: {str(e)}", exc_info=True)
+        return HttpResponse(f'Error creating Excel file: {str(e)}', status=500)
 
 @login_required
 @require_http_methods(["GET"])
@@ -614,7 +934,10 @@ def results_analytics_api(request):
         subjects = (Subject.objects.filter(id=selected_subject_id) if selected_subject_id 
                    else Subject.objects.filter(department=faculty.department))
         
+        # Even if no subjects exist, return a valid response structure
+        # This ensures the frontend always has a consistent data format
         if not subjects.exists():
+            logger.info(f"No subjects found for faculty {faculty.id}")
             return JsonResponse({
                 'total_students': 0,
                 'pass_count': 0,
@@ -624,7 +947,7 @@ def results_analytics_api(request):
                 'lowest_marks': 0,
                 'per_course_breakdown': [],
                 'student_results': []
-            })
+            }, status=200)
             
         # Get results for the selected subjects
         results = Result.objects.filter(subject__in=subjects).select_related('student', 'subject')

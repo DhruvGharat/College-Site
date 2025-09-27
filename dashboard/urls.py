@@ -20,6 +20,9 @@ urlpatterns = [
     path('api/results/template/', views.download_excel_template, name='download_excel_template'),
     path('api/results/upload/', views.upload_excel_results, name='upload_excel_results'),
     path('api/results/analytics/', views.results_analytics_api, name='results_analytics'),
+    path('api/results/download-analysis/', views.download_analysis_excel, name='download_analysis_excel'),
+    path('api/results/download-students/', views.download_student_results, name='download_student_results'),
+    path('api/results/remove/', views.remove_results_file, name='remove_results_file'),
 
     # Subjectspage
     path('subjectspage/', views.subjectspage_view, name='subjectspage'),

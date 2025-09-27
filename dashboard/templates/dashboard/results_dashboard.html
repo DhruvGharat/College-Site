@@ -31,9 +31,9 @@
                         <i class="fas fa-download mr-2"></i>
                         Download Template
                     </button>
-                    <button onclick="refreshAnalytics()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        <i class="fas fa-sync-alt mr-2"></i>
-                        Refresh Data
+                    <button onclick="downloadAnalysisExcel()" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <i class="fas fa-file-excel mr-2"></i>
+                        Download Analysis
                     </button>
                 </div>
             </div>
@@ -48,6 +48,33 @@
                 <p class="mt-1 text-sm text-gray-600">Upload Excel file with student results</p>
             </div>
             <div class="px-6 py-4">
+                <!-- File info display section -->
+                <div id="file-info" class="hidden mb-4">
+                    <div class="bg-green-50 border border-green-200 rounded-md p-4">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-file-excel text-green-500"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-green-700">Current file: <span id="current-filename">None</span></p>
+                                    <p class="text-xs text-green-600">Uploaded on: <span id="upload-date">-</span></p>
+                                </div>
+                            </div>
+                            <div>
+                                <button onclick="removeCurrentFile()" class="text-sm text-red-600 hover:text-red-800">
+                                    <i class="fas fa-trash mr-1"></i> Remove
+                                </button>
+                                <label for="excel-file-change" class="ml-3 text-sm text-blue-600 hover:text-blue-800 cursor-pointer">
+                                    <i class="fas fa-exchange-alt mr-1"></i> Change
+                                    <input id="excel-file-change" type="file" accept=".xlsx,.xls" class="sr-only" onchange="handleFileUpload(this)">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Upload area -->
                 <div id="drop-area" class="border-2 border-dashed border-gray-300 rounded-lg p-6" ondrop="dropHandler(event)" ondragover="dragOverHandler(event)" ondragleave="dragLeaveHandler(event)">
                     <div class="text-center">
                         <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
@@ -160,17 +187,7 @@
                 </div>
             </div>
 
-            <!-- Course Breakdown -->
-            <div class="bg-white rounded-lg shadow-sm border">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">Course Breakdown</h3>
-                </div>
-                <div class="px-6 py-4">
-                    <div id="course-breakdown" class="space-y-3">
-                        <!-- Course breakdown will be populated here -->
-                    </div>
-                </div>
-            </div>
+            <!-- Course Breakdown removed as requested -->
         </div>
 
         <!-- Student Results Table -->
@@ -195,6 +212,12 @@
                     </tbody>
                 </table>
             </div>
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
+                <button onclick="downloadStudentResults()" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-download mr-2"></i>
+                    Download Student Results
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -218,9 +241,122 @@
 // Global variables
 let analyticsData = null;
 
+// Store file information
+function storeFileInfo(fileName) {
+    const fileInfo = {
+        name: fileName,
+        uploadDate: new Date().toLocaleString()
+    };
+    localStorage.setItem('uploadedFileInfo', JSON.stringify(fileInfo));
+    displayFileInfo(fileInfo);
+}
+
+// Display file information
+function displayFileInfo(fileInfo) {
+    if (fileInfo) {
+        document.getElementById('current-filename').textContent = fileInfo.name;
+        document.getElementById('upload-date').textContent = fileInfo.uploadDate;
+        document.getElementById('file-info').classList.remove('hidden');
+        document.getElementById('drop-area').classList.add('hidden');
+    } else {
+        document.getElementById('file-info').classList.add('hidden');
+        document.getElementById('drop-area').classList.remove('hidden');
+    }
+}
+
+// Remove current file
+function removeCurrentFile() {
+    localStorage.removeItem('uploadedFileInfo');
+    localStorage.removeItem('lastAnalyticsData');
+    document.getElementById('file-info').classList.add('hidden');
+    document.getElementById('drop-area').classList.remove('hidden');
+    
+    // Clear dashboard data
+    document.getElementById('total-students').textContent = '0';
+    document.getElementById('pass-count').textContent = '0';
+    document.getElementById('fail-count').textContent = '0';
+    document.getElementById('average-marks').textContent = '0';
+    document.getElementById('highest-marks').textContent = '0';
+    document.getElementById('lowest-marks').textContent = '0';
+    
+    // Clear course breakdown
+    document.getElementById('course-breakdown').innerHTML = '';
+    
+    // Clear student results table
+    document.getElementById('student-results-body').innerHTML = '';
+    
+    // Send request to server to remove the file from database
+    fetch('/api/results/remove/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('File removed successfully', 'success');
+        } else {
+            showNotification('Error removing file: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error removing file', 'error');
+    });
+}
+
+// Store analytics data
+function storeAnalyticsData(data) {
+    localStorage.setItem('lastAnalyticsData', JSON.stringify(data));
+}
+
+// Load stored analytics data
+function loadStoredAnalyticsData() {
+    const storedData = localStorage.getItem('lastAnalyticsData');
+    if (storedData) {
+        try {
+            const data = JSON.parse(storedData);
+            updateDashboard(data);
+            
+            // Also update student results table if available
+            if (data.student_results && Array.isArray(data.student_results)) {
+                updateStudentResultsTable(data.student_results);
+            }
+            return true;
+        } catch (e) {
+            console.error('Error parsing stored analytics data:', e);
+        }
+    }
+    return false;
+}
+
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM Content Loaded - Initializing dashboard");
+    
+    // Check for stored file info
+    const storedFileInfo = localStorage.getItem('uploadedFileInfo');
+    if (storedFileInfo) {
+        try {
+            console.log("Found stored file info, displaying it");
+            displayFileInfo(JSON.parse(storedFileInfo));
+        } catch (e) {
+            console.error('Error parsing stored file info:', e);
+        }
+    }
+    
+    // Always load from server first to ensure fresh data
     loadAnalytics();
+    
+    // Set up the file input element
+    const fileInput = document.getElementById('excel-file');
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            handleFileUpload(this);
+        });
+    }
 });
 
 // Drag and drop handlers
@@ -247,45 +383,117 @@ function dropHandler(event) {
         for (let i = 0; i < event.dataTransfer.items.length; i++) {
             if (event.dataTransfer.items[i].kind === 'file') {
                 const file = event.dataTransfer.items[i].getAsFile();
-                processUploadedFile(file);
+                console.log('Dropped file:', file.name);
+                // Create a mock file input object to pass to handleFileUpload
+                handleFileUpload({ files: [file] });
                 break; // Only process the first file
             }
         }
     } else {
         // Use DataTransfer interface
         if (event.dataTransfer.files.length > 0) {
-            processUploadedFile(event.dataTransfer.files[0]);
+            const file = event.dataTransfer.files[0];
+            console.log('Dropped file (alternative):', file.name);
+            // Create a mock file input object to pass to handleFileUpload
+            handleFileUpload({ files: [file] });
         }
     }
 }
 
-// Process the uploaded file
-function processUploadedFile(file) {
-    // Check if file is an Excel file
-    const allowedTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
-    if (!allowedTypes.includes(file.type)) {
-        showNotification('Please select a valid Excel file (.xlsx or .xls)', 'error');
+// Initialize event listeners for file input
+document.addEventListener('DOMContentLoaded', function() {
+    // Set up the file input element
+    const fileInput = document.getElementById('excel-file');
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            handleFileUpload(this);
+        });
+    }
+    
+    // Load initial analytics
+    loadAnalytics();
+});
+
+// Function to update dashboard with analysis data
+function updateDashboard(analysis) {
+    if (!analysis) {
+        console.error('Analysis data is undefined');
         return;
     }
     
-    // Use the existing upload handler directly with the file
-    handleFileUpload({ files: [file] });
+    // Update overview metrics
+    if (analysis.overall) {
+        document.getElementById('total-students').textContent = analysis.overall.total_rows || '-';
+        document.getElementById('pass-rate').textContent = analysis.overall.pass_percentage ? analysis.overall.pass_percentage + '%' : '-';
+        document.getElementById('avg-score').textContent = analysis.overall.average_marks ? analysis.overall.average_marks.toFixed(2) : '-';
+        document.getElementById('highest-score').textContent = analysis.overall.highest_marks || '-';
+    }
+    
+    // Course breakdown section removed as requested
+    
+    // Update student results table if available
+    // Note: Backend doesn't currently provide student_results in the analysis
+    // This will be handled by the loadAnalytics function after upload
 }
 
 // Load analytics data
 async function loadAnalytics() {
+    console.log("Loading analytics data from server");
     showLoading();
     try {
         const response = await fetch('/api/results/analytics/');
         if (response.ok) {
             analyticsData = await response.json();
+            console.log("Received analytics data:", analyticsData);
+            
+            // Store analytics data in localStorage for persistence
+            storeAnalyticsData(analyticsData);
+            
+            // Update dashboard with the data
             updateDashboard(analyticsData);
+            
+            // Update student results table directly from the analytics data
+            if (analyticsData.student_results && Array.isArray(analyticsData.student_results)) {
+                console.log("Updating student results table from analytics data");
+                updateStudentResultsTable(analyticsData.student_results);
+            } else {
+                console.log("No student results in analytics data, trying to load separately");
+                // If no student results in analytics data, try to load separately
+                try {
+                    const studentsResponse = await fetch('/api/results/students/');
+                    if (studentsResponse.ok) {
+                        const studentsData = await studentsResponse.json();
+                        if (studentsData && Array.isArray(studentsData.students)) {
+                            console.log("Loaded student results separately:", studentsData.students.length);
+                            updateStudentResultsTable(studentsData.students);
+                            
+                            // Update the stored analytics data with student results
+                            analyticsData.student_results = studentsData.students;
+                            storeAnalyticsData(analyticsData);
+                        }
+                    }
+                } catch (studentError) {
+                    console.error("Error loading student results:", studentError);
+                }
+            }
         } else {
             const error = await response.json();
+            console.error("Error response from analytics API:", error);
             showNotification('Error loading analytics: ' + error.error, 'error');
+            
+            // Try to load from localStorage as fallback
+            if (!loadStoredAnalyticsData()) {
+                console.log("No stored analytics data available as fallback");
+            }
         }
     } catch (error) {
+        console.error("Exception in loadAnalytics:", error);
         showNotification('Error loading analytics: ' + error.message, 'error');
+        
+        // Try to load from localStorage as fallback
+        if (!loadStoredAnalyticsData()) {
+            console.log("No stored analytics data available as fallback");
+        }
     } finally {
         hideLoading();
     }
@@ -304,11 +512,12 @@ function updateDashboard(data) {
     document.getElementById('lowest-marks').textContent = data.lowest_marks || 0;
     document.getElementById('pass-percentage').textContent = (data.pass_percentage || 0) + '%';
 
-    // Update course breakdown
-    updateCourseBreakdown(data.per_course_breakdown);
+    // Course breakdown section removed as requested
 
-    // Update student results table
-    updateStudentResultsTable(data.student_results);
+    // Only update student results table if data is available
+    if (data.student_results && Array.isArray(data.student_results) && data.student_results.length > 0) {
+        updateStudentResultsTable(data.student_results);
+    }
 }
 
 // Update course breakdown section
@@ -385,18 +594,17 @@ function handleFileUpload(input) {
         // From file input
         file = input.files[0];
         if (!file) return;
-    } else if (input.files !== undefined) {
-        // From drag and drop
-        file = input.files[0];
-        if (!file) return;
     } else {
         console.error('Invalid input for file upload');
         return;
     }
 
-    // Validate file type
-    const allowedTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
-    if (!allowedTypes.includes(file.type)) {
+    // Log file information for debugging
+    console.log('File selected:', file.name, file.type, file.size);
+
+    // Validate file type - accept any Excel file type
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
         showNotification('Please select a valid Excel file (.xlsx or .xls)', 'error');
         return;
     }
@@ -408,23 +616,48 @@ function handleFileUpload(input) {
     const formData = new FormData();
     formData.append('excel_file', file);
 
+    // Log the FormData for debugging
+    console.log('Uploading file:', file.name);
+
     fetch('/api/results/upload/', {
         method: 'POST',
         body: formData,
         headers: {
             'X-CSRFToken': getCSRFToken()
+            // Don't set Content-Type header, let the browser set it with the boundary
         }
     })
     .then(response => response.json())
     .then(data => {
         document.getElementById('upload-progress').classList.add('hidden');
+        console.log('Server response:', data);
         
-        if (data.success) {
-            showNotification(data.message, 'success');
-            // Refresh analytics after successful upload
-            loadAnalytics();
+        if (data && data.success) {
+            showNotification(data.message || 'Upload successful', 'success');
+            
+            // If analysis data is available, update the dashboard immediately
+            try {
+                if (data.analysis) {
+                    console.log('Received analysis data:', data.analysis);
+                    // Store file information
+                    storeFileInfo(file.name);
+                    // Store analytics data
+                    storeAnalyticsData(data.analysis);
+                    // Update dashboard
+                    updateDashboard(data.analysis);
+                    showNotification('File analyzed successfully! Dashboard updated with the latest data.', 'success');
+                } else {
+                    console.log('No analysis data received, refreshing from server');
+                    // Otherwise, refresh analytics from the server
+                    loadAnalytics();
+                }
+            } catch (err) {
+                console.error('Error updating dashboard:', err);
+                // Fall back to loading analytics from server
+                loadAnalytics();
+            }
         } else {
-            showNotification('Upload failed: ' + data.error, 'error');
+            showNotification('Upload failed: ' + (data && data.error ? data.error : 'Unknown error'), 'error');
         }
     })
     .catch(error => {
@@ -441,6 +674,16 @@ function handleFileUpload(input) {
 // Download template
 function downloadTemplate() {
     window.open('/api/results/template/', '_blank');
+}
+
+// Download analysis Excel file
+function downloadAnalysisExcel() {
+    window.open('/api/results/download-analysis/', '_blank');
+}
+
+// Download student results
+function downloadStudentResults() {
+    window.open('/api/results/download-students/', '_blank');
 }
 
 // Refresh analytics

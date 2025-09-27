@@ -13,10 +13,6 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 from decouple import config
 import os
-try:
-    import dj_database_url  # type: ignore
-except Exception:
-    dj_database_url = None
 from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -86,7 +82,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'dashboard',
-    'django_browser_reload',
+    # 'django_browser_reload',  # Commented out to fix module error
 ]
 
 MIDDLEWARE = [
@@ -97,7 +93,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django_browser_reload.middleware.BrowserReloadMiddleware',
+    # 'django_browser_reload.middleware.BrowserReloadMiddleware',  # Commented out to fix module error
 ]
 
 ROOT_URLCONF = 'faculty_portal.urls'
@@ -124,47 +120,12 @@ WSGI_APPLICATION = 'faculty_portal.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-def _get_bool(name: str, default: bool = False) -> bool:
-    """Parse boolean-like environment values robustly."""
-    val = str(config(name, default=str(default))).strip().lower()
-    return val in {"1", "true", "yes", "on"}
-
-USE_SUPABASE = True  # Enforce Supabase-only
-
-DATABASES = {}
-
-# Require DATABASE_URL (preferred). If not present, build from SUPABASE_*.
-DATABASE_URL = config('DATABASE_URL', default=None)
-if DATABASE_URL and dj_database_url:
-    DATABASES['default'] = dj_database_url.parse(
-        DATABASE_URL,
-        conn_max_age=config('DB_CONN_MAX_AGE', cast=int, default=60)
-    )
-else:
-    # Fallback to explicit Supabase PG params. All must be provided.
-    supabase_host = config('SUPABASE_HOST', default=None)
-    supabase_user = config('SUPABASE_USER', default=None)
-    supabase_password = config('SUPABASE_PASSWORD', default=None)
-    supabase_db = config('SUPABASE_DB', default='postgres')
-    supabase_port = config('SUPABASE_PORT', default='5432')
-    supabase_sslmode = config('SUPABASE_SSLMODE', default='require')
-    if not all([supabase_host, supabase_user, supabase_password]):
-        raise ImproperlyConfigured(
-            'DATABASE_URL or SUPABASE_* environment variables must be set. '
-            'SQLite fallback is disabled.'
-        )
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': supabase_db,
-        'USER': supabase_user,
-        'PASSWORD': supabase_password,
-        'HOST': supabase_host,
-        'PORT': supabase_port,
-        'OPTIONS': {
-            'sslmode': supabase_sslmode,
-        },
-        'CONN_MAX_AGE': config('DB_CONN_MAX_AGE', cast=int, default=60),
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
+}
 
 
 # Password validation

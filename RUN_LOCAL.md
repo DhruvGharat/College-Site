@@ -18,17 +18,7 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-3) Configure Supabase (pooled) connection
-- Create a `.env` in the project root with:
-```
-DATABASE_URL=postgresql://<user-with-project-ref>:<password>@<pooled-host>:<port>/postgres?sslmode=require
-```
-Example:
-```
-DATABASE_URL=postgresql://postgres.ddzjlyxhxeibbvazncos:YOURPASSWORD@aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require
-```
-
-4) Apply migrations (first time only)
+3) Apply migrations (first time only)
 ```
 python manage.py migrate
 ```
@@ -46,7 +36,7 @@ python manage.py runserver
 Open http://127.0.0.1:8000
 
 Notes:
-- This project uses Django auth stored in Supabase Postgres (tables like `auth_user`). It does not use Supabase Auth.
+- This project uses Django's default authentication system with SQLite database.
 - To create faculty accounts: either use `/admin` or run a short shell snippet to create `User` and linked `Faculty` with a valid `Department`.
 
 ### Create a user + faculty via CLI

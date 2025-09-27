@@ -46,8 +46,8 @@ A comprehensive Django-based web application for faculty to manage student resul
 - **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
 - **Styling**: Tailwind CSS
 - **Charts**: Chart.js
-- **Database**: SQLite (development)
-- **Data Processing**: Pandas, OpenPyXL
+- **Database**: SQLite
+- **Data Processing**: OpenPyXL
 - **Icons**: Font Awesome
 
 ## Installation & Setup
@@ -77,17 +77,9 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 4. Database Setup (Supabase only)
+### 4. Database Setup
 
-Create a `.env` with your Supabase pooled connection string:
-
-```
-DATABASE_URL=postgresql://<user-with-project-ref>:<password>@<pooled-host>:<port>/postgres?sslmode=require
-```
-
-Then apply migrations:
-
-```
+```bash
 python manage.py migrate
 ```
 
