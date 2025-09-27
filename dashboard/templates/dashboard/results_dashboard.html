@@ -48,7 +48,7 @@
                 <p class="mt-1 text-sm text-gray-600">Upload Excel file with student results</p>
             </div>
             <div class="px-6 py-4">
-                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                <div id="drop-area" class="border-2 border-dashed border-gray-300 rounded-lg p-6" ondrop="dropHandler(event)" ondragover="dragOverHandler(event)" ondragleave="dragLeaveHandler(event)">
                     <div class="text-center">
                         <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
                         <div class="text-sm text-gray-600">
@@ -223,6 +223,55 @@ document.addEventListener('DOMContentLoaded', function() {
     loadAnalytics();
 });
 
+// Drag and drop handlers
+function dragOverHandler(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    document.getElementById('drop-area').classList.add('bg-blue-50', 'border-blue-300');
+}
+
+function dragLeaveHandler(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    document.getElementById('drop-area').classList.remove('bg-blue-50', 'border-blue-300');
+}
+
+function dropHandler(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    document.getElementById('drop-area').classList.remove('bg-blue-50', 'border-blue-300');
+    
+    if (event.dataTransfer.items) {
+        // Use DataTransferItemList interface
+        for (let i = 0; i < event.dataTransfer.items.length; i++) {
+            if (event.dataTransfer.items[i].kind === 'file') {
+                const file = event.dataTransfer.items[i].getAsFile();
+                processUploadedFile(file);
+                break; // Only process the first file
+            }
+        }
+    } else {
+        // Use DataTransfer interface
+        if (event.dataTransfer.files.length > 0) {
+            processUploadedFile(event.dataTransfer.files[0]);
+        }
+    }
+}
+
+// Process the uploaded file
+function processUploadedFile(file) {
+    // Check if file is an Excel file
+    const allowedTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+    if (!allowedTypes.includes(file.type)) {
+        showNotification('Please select a valid Excel file (.xlsx or .xls)', 'error');
+        return;
+    }
+    
+    // Use the existing upload handler directly with the file
+    handleFileUpload({ files: [file] });
+}
+
 // Load analytics data
 async function loadAnalytics() {
     showLoading();
@@ -329,8 +378,21 @@ function updateStudentResultsTable(students) {
 
 // Handle file upload
 function handleFileUpload(input) {
-    const file = input.files[0];
-    if (!file) return;
+    let file;
+    
+    // Check if input is from file input or drag and drop
+    if (input.files) {
+        // From file input
+        file = input.files[0];
+        if (!file) return;
+    } else if (input.files !== undefined) {
+        // From drag and drop
+        file = input.files[0];
+        if (!file) return;
+    } else {
+        console.error('Invalid input for file upload');
+        return;
+    }
 
     // Validate file type
     const allowedTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
@@ -370,8 +432,10 @@ function handleFileUpload(input) {
         showNotification('Upload failed: ' + error.message, 'error');
     });
 
-    // Reset file input
-    input.value = '';
+    // Reset file input if it's a DOM element
+    if (input.value !== undefined) {
+        input.value = '';
+    }
 }
 
 // Download template

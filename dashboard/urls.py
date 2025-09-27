@@ -12,6 +12,7 @@ urlpatterns = [
     # Main pages
     path('selection/', views.selection_view, name='selection'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
+    path('dashboard/<int:subject_id>/', views.dashboard_view, name='dashboard_with_subject'),
     path('', views.home_view, name='home'),
     
     # Results Dashboard

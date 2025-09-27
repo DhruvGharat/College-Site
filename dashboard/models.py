@@ -6,7 +6,8 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 class Faculty(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     employee_id = models.CharField(max_length=20, unique=True)
-    department = models.CharField(max_length=100)
+    department = models.ForeignKey('Department', on_delete=models.CASCADE)
+    department_name = models.CharField(max_length=100)  # Added to match database schema
     designation = models.CharField(max_length=100)
     phone = models.CharField(max_length=15, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
