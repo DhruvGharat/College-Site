@@ -302,25 +302,41 @@ def selection_view(request):
 
 
 @login_required
-def dashboard_view(request):
+def dashboard_view(request, subject_id=None):
     try:
         faculty = Faculty.objects.get(user=request.user)
     except Faculty.DoesNotExist:
         messages.error(request, 'Faculty profile not found.')
         return redirect('login')
     
-    # Get session data
-    selected_year = request.session.get('selected_year')
-    selected_scheme = request.session.get('selected_scheme')
-    selected_department_id = request.session.get('selected_department')
-    selected_subject_id = request.session.get('selected_subject')
+    # If subject_id is provided in URL, use it instead of session data
+    if subject_id:
+        try:
+            selected_subject = Subject.objects.get(id=subject_id)
+            # Update session with the selected subject
+            request.session['selected_subject'] = selected_subject.id
+            request.session['selected_year'] = selected_subject.year
+            request.session['selected_scheme'] = selected_subject.scheme
+            request.session['selected_department'] = selected_subject.department.id
+        except Subject.DoesNotExist:
+            messages.error(request, 'Subject not found.')
+            return redirect('subjectspage')
+    else:
+        # Get session data
+        selected_year = request.session.get('selected_year')
+        selected_scheme = request.session.get('selected_scheme')
+        selected_department_id = request.session.get('selected_department')
+        selected_subject_id = request.session.get('selected_subject')
+        
+        # Get selected subject if available in session
+        selected_subject = Subject.objects.get(id=selected_subject_id) if selected_subject_id else None
     
     context = {
         'faculty': faculty,
-        'selected_year': selected_year,
-        'selected_scheme': selected_scheme,
-        'selected_department': Department.objects.get(id=selected_department_id) if selected_department_id else None,
-        'selected_subject': Subject.objects.get(id=selected_subject_id) if selected_subject_id else None,
+        'selected_year': request.session.get('selected_year'),
+        'selected_scheme': request.session.get('selected_scheme'),
+        'selected_department': Department.objects.get(id=request.session.get('selected_department')) if request.session.get('selected_department') else None,
+        'selected_subject': selected_subject,
     }
     
     return render(request, 'dashboard/dashboard.html', context)

@@ -25,6 +25,7 @@ urlpatterns = [
     # Root should force fresh sign-in each time
     path('', dashboard_views.root_view, name='root'),
     path('', include('dashboard.urls')),
+    path("__reload__/", include("django_browser_reload.urls")),
 ]
 
 # Serve media files during development
