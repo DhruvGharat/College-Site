@@ -1,539 +1,754 @@
-{% extends 'dashboard/base.html' %}
-{% load static %}
-
-{% block title %}Results Dashboard - Faculty Portal{% endblock %}
-
-{% block content %}
+{% extends 'dashboard/base.html' %} {% load static %} {% block title %}Results
+Dashboard - Faculty Portal{% endblock %} {% block content %}
 <div class="min-h-screen bg-gray-50">
-    <!-- CSRF Token for AJAX requests -->
-    {% csrf_token %}
-    <!-- Header -->
-    <div class="bg-white shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-6">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Results Dashboard</h1>
-                    <p class="mt-1 text-sm text-gray-600">Comprehensive analysis and management of student results</p>
-                    {% if selected_subject %}
-                        <p class="mt-1 text-sm text-blue-600">
-                            <i class="fas fa-book mr-1"></i>
-                            Current Subject: {{ selected_subject.name }} ({{ selected_subject.code }})
-                        </p>
-                    {% elif selected_department %}
-                        <p class="mt-1 text-sm text-blue-600">
-                            <i class="fas fa-building mr-1"></i>
-                            Department: {{ selected_department.name }}
-                        </p>
-                    {% endif %}
-                </div>
-                <div class="flex space-x-3">
-                    <button onclick="downloadTemplate()" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        <i class="fas fa-download mr-2"></i>
-                        Download Template
-                    </button>
-                    <button onclick="downloadAnalysisExcel()" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        <i class="fas fa-file-excel mr-2"></i>
-                        Download Analysis
-                    </button>
-                </div>
-            </div>
+  <!-- CSRF Token for AJAX requests -->
+  {% csrf_token %}
+  <!-- Header -->
+  <div class="bg-white shadow-sm border-b">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center py-6">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Results Dashboard</h1>
+          <p class="mt-1 text-sm text-gray-600">
+            Comprehensive analysis and management of student results
+          </p>
+          {% if selected_subject %}
+          <p class="mt-1 text-sm text-blue-600">
+            <i class="fas fa-book mr-1"></i>
+            Current Subject: {{ selected_subject.name }} ({{
+            selected_subject.code }})
+          </p>
+          {% elif selected_department %}
+          <p class="mt-1 text-sm text-blue-600">
+            <i class="fas fa-building mr-1"></i>
+            Department: {{ selected_department.name }}
+          </p>
+          {% endif %}
         </div>
+        <div class="flex space-x-3">
+          <button
+            onclick="downloadTemplate()"
+            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <i class="fas fa-download mr-2"></i>
+            Download Template
+          </button>
+          <button
+            onclick="downloadAnalysisExcel()"
+            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <i class="fas fa-file-excel mr-2"></i>
+            Download Analysis
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Historical Data Section -->
+    <div class="bg-white rounded-lg shadow-sm border mb-8">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-lg font-medium text-gray-900">
+          Historical Results Data
+        </h2>
+        <p class="mt-1 text-sm text-gray-600">
+          Viewing results from previous academic years
+        </p>
+      </div>
+      <div class="px-6 py-4">
+        <!-- Current Year Data -->
+        {% if selected_subject %}
+        <div class="mb-6">
+          <h3 class="text-md font-semibold text-gray-800 mb-3">
+            Current Academic Year ({{ selected_subject.year }})
+          </h3>
+          <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="bg-white rounded-lg p-3 shadow-sm">
+                <p class="text-sm text-gray-500">Subject Code</p>
+                <p class="font-medium">{{ selected_subject.code }}</p>
+              </div>
+              <div class="bg-white rounded-lg p-3 shadow-sm">
+                <p class="text-sm text-gray-500">Subject Name</p>
+                <p class="font-medium">{{ selected_subject.name }}</p>
+              </div>
+              <div class="bg-white rounded-lg p-3 shadow-sm">
+                <p class="text-sm text-gray-500">Department</p>
+                <p class="font-medium">
+                  {{ selected_subject.department.name }}
+                </p>
+              </div>
+              <div class="bg-white rounded-lg p-3 shadow-sm">
+                <p class="text-sm text-gray-500">Scheme</p>
+                <p class="font-medium">{{ selected_subject.scheme }}</p>
+              </div>
+            </div>
+
+            <!-- Note about previous years data -->
+            <div
+              class="mt-4 bg-green-50 p-3 rounded-lg border border-green-100"
+            >
+              <p class="text-sm text-green-700">
+                <i class="fas fa-info-circle mr-2"></i>
+                <strong>Note:</strong> Previous years' data (2022-2023,
+                2023-2024) is displayed below for historical comparison.
+              </p>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Previous Years Data -->
+        <div>
+          <h3 class="text-lg font-bold text-gray-800 mb-3">
+            Previous Academic Years Data
+          </h3>
+
+          {% if previous_years_data %}
+          <div class="space-y-4">
+            {% for year_data in previous_years_data %}
+            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <h4 class="text-md font-medium text-blue-700 mb-3">
+                <i class="fas fa-history mr-2"></i>
+                {{ year_data.year }} Academic Year
+              </h4>
+
+              {% if year_data.has_data %}
+              <div class="space-y-3">
+                {% for subject_data in year_data.subjects %}
+                <div
+                  class="bg-white rounded-lg p-4 border border-gray-100 hover:border-blue-200 transition-colors duration-200"
+                >
+                  <div class="flex justify-between items-start mb-3">
+                    <div>
+                      <h5 class="font-medium text-gray-900">
+                        {{ subject_data.subject.name }}
+                      </h5>
+                      <p class="text-sm text-gray-600">
+                        Code: {{ subject_data.subject.code }} | Department: {{
+                        subject_data.subject.department.name }}
+                      </p>
+                    </div>
+                    <div class="text-right">
+                      <span
+                        class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium"
+                      >
+                        {{ subject_data.result_count }} Students
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-green-50 rounded-lg p-3 text-center">
+                      <p class="text-sm text-gray-600">Average Marks</p>
+                      <p class="text-lg font-semibold text-green-700">
+                        {{ subject_data.avg_marks }}%
+                      </p>
+                    </div>
+                    <div class="bg-blue-50 rounded-lg p-3 text-center">
+                      <p class="text-sm text-gray-600">Pass Rate</p>
+                      <p class="text-lg font-semibold text-blue-700">
+                        {{ subject_data.pass_rate }}%
+                      </p>
+                    </div>
+                    <div class="bg-purple-50 rounded-lg p-3 text-center">
+                      <p class="text-sm text-gray-600">Passed</p>
+                      <p class="text-lg font-semibold text-purple-700">
+                        {{ subject_data.pass_count }}/{{
+                        subject_data.result_count }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="mt-3 flex justify-end">
+                    <button
+                      onclick="viewDetailedResults('{{ subject_data.subject.id }}', '{{ year_data.year }}')"
+                      class="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      <i class="fas fa-eye mr-1"></i>View Detailed Results
+                    </button>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+
+              {% if year_data.subjects|length > 1 %}
+              <div class="mt-4 bg-blue-50 rounded-lg p-3 text-center">
+                <p class="text-sm text-blue-700">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Found {{ year_data.subjects|length }} subjects with historical
+                  data for {{ year_data.year }}
+                </p>
+              </div>
+              {% endif %} {% else %}
+              <div class="bg-yellow-50 rounded-lg p-4 border border-yellow-100">
+                <p class="text-sm text-yellow-700">
+                  <i class="fas fa-exclamation-circle mr-2"></i>
+                  No data available for {{ year_data.year }} academic year. 
+                  {% if selected_subject %}
+                   No results found for {{selected_subject.name }} ({{ selected_subject.code }}) in this year. 
+                  {% else %} 
+                  No results found for {{
+                  selected_department.name }} department in this year. 
+                  {% endif%}
+                </p>
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div
+            class="bg-gray-50 rounded-lg p-6 border border-gray-200 text-center"
+          >
+            <i class="fas fa-database text-gray-400 text-3xl mb-3"></i>
+            <h4 class="text-lg font-medium text-gray-700 mb-2">
+              No Historical Data Available
+            </h4>
+            <p class="text-sm text-gray-600 mb-4">
+              {% if selected_subject %} No historical data found for {{
+              selected_subject.name }} ({{ selected_subject.code }}). {% elif
+              selected_department %} No historical data found for {{
+              selected_department.name }} department. {% else %} Please select a
+              subject or department to view historical data. {% endif %}
+            </p>
+            <p class="text-xs text-gray-500">
+              Historical data includes results uploaded via Excel files and
+              subjects from previous academic years (2022-2023, 2023-2024).
+            </p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Upload Section -->
-        <div class="bg-white rounded-lg shadow-sm border mb-8">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-medium text-gray-900">Upload Results</h2>
-                <p class="mt-1 text-sm text-gray-600">Upload Excel file with student results</p>
+    <!-- Analytics Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-lg shadow-sm border p-6">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div
+              class="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center"
+            >
+              <i class="fas fa-users text-blue-600"></i>
             </div>
-            <div class="px-6 py-4">
-                <!-- File info display section -->
-                <div id="file-info" class="hidden mb-4">
-                    <div class="bg-green-50 border border-green-200 rounded-md p-4">
-                        <div class="flex justify-between items-center">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <i class="fas fa-file-excel text-green-500"></i>
-                                </div>
-                                <div class="ml-3">
-                                    <p class="text-sm text-green-700">Current file: <span id="current-filename">None</span></p>
-                                    <p class="text-xs text-green-600">Uploaded on: <span id="upload-date">-</span></p>
-                                </div>
-                            </div>
-                            <div>
-                                <button onclick="removeCurrentFile()" class="text-sm text-red-600 hover:text-red-800">
-                                    <i class="fas fa-trash mr-1"></i> Remove
-                                </button>
-                                <label for="excel-file-change" class="ml-3 text-sm text-blue-600 hover:text-blue-800 cursor-pointer">
-                                    <i class="fas fa-exchange-alt mr-1"></i> Change
-                                    <input id="excel-file-change" type="file" accept=".xlsx,.xls" class="sr-only" onchange="handleFileUpload(this)">
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Upload area -->
-                <div id="drop-area" class="border-2 border-dashed border-gray-300 rounded-lg p-6" ondrop="dropHandler(event)" ondragover="dragOverHandler(event)" ondragleave="dragLeaveHandler(event)">
-                    <div class="text-center">
-                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
-                        <div class="text-sm text-gray-600">
-                            <label for="excel-file" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                <span>Upload Excel file</span>
-                                <input id="excel-file" name="excel-file" type="file" accept=".xlsx,.xls" class="sr-only" onchange="handleFileUpload(this)">
-                            </label>
-                            <p class="pl-1">or drag and drop</p>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-2">Excel files only (.xlsx, .xls)</p>
-                    </div>
-                </div>
-                <div id="upload-progress" class="hidden mt-4">
-                    <div class="bg-blue-50 border border-blue-200 rounded-md p-4">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <div class="w-4 h-4 bg-blue-400 rounded-full"></div>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm text-blue-700">Uploading and processing file...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-500">Total Students</p>
+            <p class="text-2xl font-semibold text-gray-900" id="total-students">
+              -
+            </p>
+          </div>
         </div>
+      </div>
 
-        <!-- Analytics Overview -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow-sm border p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
-                            <i class="fas fa-users text-blue-600"></i>
-                        </div>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Total Students</p>
-                        <p class="text-2xl font-semibold text-gray-900" id="total-students">-</p>
-                    </div>
-                </div>
+      <div class="bg-white rounded-lg shadow-sm border p-6">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div
+              class="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center"
+            >
+              <i class="fas fa-check-circle text-green-600"></i>
             </div>
-
-            <div class="bg-white rounded-lg shadow-sm border p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center">
-                            <i class="fas fa-check-circle text-green-600"></i>
-                        </div>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Passed</p>
-                        <p class="text-2xl font-semibold text-gray-900" id="pass-count">-</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-lg shadow-sm border p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-red-100 rounded-md flex items-center justify-center">
-                            <i class="fas fa-times-circle text-red-600"></i>
-                        </div>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Failed</p>
-                        <p class="text-2xl font-semibold text-gray-900" id="fail-count">-</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-lg shadow-sm border p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-yellow-100 rounded-md flex items-center justify-center">
-                            <i class="fas fa-chart-line text-yellow-600"></i>
-                        </div>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Average Marks</p>
-                        <p class="text-2xl font-semibold text-gray-900" id="average-marks">-</p>
-                    </div>
-                </div>
-            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-500">Passed</p>
+            <p class="text-2xl font-semibold text-gray-900" id="pass-count">
+              -
+            </p>
+          </div>
         </div>
+      </div>
 
-        <!-- Detailed Statistics -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <!-- Marks Distribution -->
-            <div class="bg-white rounded-lg shadow-sm border">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">Marks Distribution</h3>
-                </div>
-                <div class="px-6 py-4">
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Highest Marks</span>
-                            <span class="text-lg font-semibold text-green-600" id="highest-marks">-</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Lowest Marks</span>
-                            <span class="text-lg font-semibold text-red-600" id="lowest-marks">-</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Pass Percentage</span>
-                            <span class="text-lg font-semibold text-blue-600" id="pass-percentage">-</span>
-                        </div>
-                    </div>
-                </div>
+      <div class="bg-white rounded-lg shadow-sm border p-6">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div
+              class="w-8 h-8 bg-red-100 rounded-md flex items-center justify-center"
+            >
+              <i class="fas fa-times-circle text-red-600"></i>
             </div>
-
-            <!-- Course Breakdown removed as requested -->
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-500">Failed</p>
+            <p class="text-2xl font-semibold text-gray-900" id="fail-count">
+              -
+            </p>
+          </div>
         </div>
+      </div>
 
-        <!-- Student Results Table -->
-        <div class="bg-white rounded-lg shadow-sm border">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900">Student Results</h3>
+      <div class="bg-white rounded-lg shadow-sm border p-6">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div
+              class="w-8 h-8 bg-yellow-100 rounded-md flex items-center justify-center"
+            >
+              <i class="fas fa-chart-line text-yellow-600"></i>
             </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Roll No</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Marks</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
-                        </tr>
-                    </thead>
-                    <tbody id="student-results-table" class="bg-white divide-y divide-gray-200">
-                        <!-- Student results will be populated here -->
-                    </tbody>
-                </table>
-            </div>
-            <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
-                <button onclick="downloadStudentResults()" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <i class="fas fa-download mr-2"></i>
-                    Download Student Results
-                </button>
-            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-500">Average Marks</p>
+            <p class="text-2xl font-semibold text-gray-900" id="average-marks">
+              -
+            </p>
+          </div>
         </div>
+      </div>
     </div>
+
+    <!-- Detailed Statistics -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      <!-- Marks Distribution -->
+      <div class="bg-white rounded-lg shadow-sm border">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-medium text-gray-900">Marks Distribution</h3>
+        </div>
+        <div class="px-6 py-4">
+          <div class="space-y-4">
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600">Highest Marks</span>
+              <span
+                class="text-lg font-semibold text-green-600"
+                id="highest-marks"
+                >-</span
+              >
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600">Lowest Marks</span>
+              <span class="text-lg font-semibold text-red-600" id="lowest-marks"
+                >-</span
+              >
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600">Pass Percentage</span>
+              <span
+                class="text-lg font-semibold text-blue-600"
+                id="pass-percentage"
+                >-</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Course Breakdown removed as requested -->
+    </div>
+
+    <!-- Student Results Table -->
+    <div class="bg-white rounded-lg shadow-sm border">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">Student Results</h3>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Roll No
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Name
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Course
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Marks
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Status
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Percentage
+              </th>
+            </tr>
+          </thead>
+          <tbody
+            id="student-results-table"
+            class="bg-white divide-y divide-gray-200"
+          >
+            <!-- Student results will be populated here -->
+          </tbody>
+        </table>
+      </div>
+      <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
+        <button
+          onclick="downloadStudentResults()"
+          class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          <i class="fas fa-download mr-2"></i>
+          Download Student Results
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Loading Overlay -->
-<div id="loading-overlay" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div class="mt-3 text-center">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
-                <div class="w-6 h-6 bg-blue-600 rounded-full"></div>
-            </div>
-            <h3 class="text-lg font-medium text-gray-900 mt-4">Loading Analytics</h3>
-            <p class="text-sm text-gray-500 mt-2">Please wait while we fetch the latest data...</p>
-        </div>
+<div
+  id="loading-overlay"
+  class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+>
+  <div
+    class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white"
+  >
+    <div class="mt-3 text-center">
+      <div
+        class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100"
+      >
+        <div class="w-6 h-6 bg-blue-600 rounded-full"></div>
+      </div>
+      <h3 class="text-lg font-medium text-gray-900 mt-4">Loading Analytics</h3>
+      <p class="text-sm text-gray-500 mt-2">
+        Please wait while we fetch the latest data...
+      </p>
     </div>
+  </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
+{% endblock %} {% block extra_js %}
 <script>
-// Global variables
-let analyticsData = null;
+  // Global variables
+  let analyticsData = null;
 
-// Store file information
-function storeFileInfo(fileName) {
+  // Store file information
+  function storeFileInfo(fileName) {
     const fileInfo = {
-        name: fileName,
-        uploadDate: new Date().toLocaleString()
+      name: fileName,
+      uploadDate: new Date().toLocaleString(),
     };
-    localStorage.setItem('uploadedFileInfo', JSON.stringify(fileInfo));
+    localStorage.setItem("uploadedFileInfo", JSON.stringify(fileInfo));
     displayFileInfo(fileInfo);
-}
+  }
 
-// Display file information
-function displayFileInfo(fileInfo) {
+  // Display file information
+  function displayFileInfo(fileInfo) {
     if (fileInfo) {
-        document.getElementById('current-filename').textContent = fileInfo.name;
-        document.getElementById('upload-date').textContent = fileInfo.uploadDate;
-        document.getElementById('file-info').classList.remove('hidden');
-        document.getElementById('drop-area').classList.add('hidden');
+      document.getElementById("current-filename").textContent = fileInfo.name;
+      document.getElementById("upload-date").textContent = fileInfo.uploadDate;
+      document.getElementById("file-info").classList.remove("hidden");
+      document.getElementById("drop-area").classList.add("hidden");
     } else {
-        document.getElementById('file-info').classList.add('hidden');
-        document.getElementById('drop-area').classList.remove('hidden');
+      document.getElementById("file-info").classList.add("hidden");
+      document.getElementById("drop-area").classList.remove("hidden");
     }
-}
+  }
 
-// Remove current file
-function removeCurrentFile() {
-    localStorage.removeItem('uploadedFileInfo');
-    localStorage.removeItem('lastAnalyticsData');
-    document.getElementById('file-info').classList.add('hidden');
-    document.getElementById('drop-area').classList.remove('hidden');
-    
+  // Remove current file
+  function removeCurrentFile() {
+    localStorage.removeItem("uploadedFileInfo");
+    localStorage.removeItem("lastAnalyticsData");
+    document.getElementById("file-info").classList.add("hidden");
+    document.getElementById("drop-area").classList.remove("hidden");
+
     // Clear dashboard data
-    document.getElementById('total-students').textContent = '0';
-    document.getElementById('pass-count').textContent = '0';
-    document.getElementById('fail-count').textContent = '0';
-    document.getElementById('average-marks').textContent = '0';
-    document.getElementById('highest-marks').textContent = '0';
-    document.getElementById('lowest-marks').textContent = '0';
-    
+    document.getElementById("total-students").textContent = "0";
+    document.getElementById("pass-count").textContent = "0";
+    document.getElementById("fail-count").textContent = "0";
+    document.getElementById("average-marks").textContent = "0";
+    document.getElementById("highest-marks").textContent = "0";
+    document.getElementById("lowest-marks").textContent = "0";
+
     // Clear course breakdown
-    document.getElementById('course-breakdown').innerHTML = '';
-    
+    document.getElementById("course-breakdown").innerHTML = "";
+
     // Clear student results table
-    document.getElementById('student-results-body').innerHTML = '';
-    
+    document.getElementById("student-results-body").innerHTML = "";
+
     // Send request to server to remove the file from database
-    fetch('/api/results/remove/', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCSRFToken(),
-            'Content-Type': 'application/json'
-        }
+    fetch("/api/results/remove/", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": getCSRFToken(),
+        "Content-Type": "application/json",
+      },
     })
-    .then(response => response.json())
-    .then(data => {
+      .then((response) => response.json())
+      .then((data) => {
         if (data.success) {
-            showNotification('File removed successfully', 'success');
+          showNotification("File removed successfully", "success");
         } else {
-            showNotification('Error removing file: ' + data.error, 'error');
+          showNotification("Error removing file: " + data.error, "error");
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('Error removing file', 'error');
-    });
-}
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        showNotification("Error removing file", "error");
+      });
+  }
 
-// Store analytics data
-function storeAnalyticsData(data) {
-    localStorage.setItem('lastAnalyticsData', JSON.stringify(data));
-}
+  // Store analytics data
+  function storeAnalyticsData(data) {
+    localStorage.setItem("lastAnalyticsData", JSON.stringify(data));
+  }
 
-// Load stored analytics data
-function loadStoredAnalyticsData() {
-    const storedData = localStorage.getItem('lastAnalyticsData');
+  // Load stored analytics data
+  function loadStoredAnalyticsData() {
+    const storedData = localStorage.getItem("lastAnalyticsData");
     if (storedData) {
-        try {
-            const data = JSON.parse(storedData);
-            updateDashboard(data);
-            
-            // Also update student results table if available
-            if (data.student_results && Array.isArray(data.student_results)) {
-                updateStudentResultsTable(data.student_results);
-            }
-            return true;
-        } catch (e) {
-            console.error('Error parsing stored analytics data:', e);
+      try {
+        const data = JSON.parse(storedData);
+        updateDashboard(data);
+
+        // Also update student results table if available
+        if (data.student_results && Array.isArray(data.student_results)) {
+          updateStudentResultsTable(data.student_results);
         }
+        return true;
+      } catch (e) {
+        console.error("Error parsing stored analytics data:", e);
+      }
     }
     return false;
-}
+  }
 
-// Initialize dashboard
-document.addEventListener('DOMContentLoaded', function() {
+  // Initialize dashboard
+  document.addEventListener("DOMContentLoaded", function () {
     console.log("DOM Content Loaded - Initializing dashboard");
-    
+
     // Check for stored file info
-    const storedFileInfo = localStorage.getItem('uploadedFileInfo');
+    const storedFileInfo = localStorage.getItem("uploadedFileInfo");
     if (storedFileInfo) {
-        try {
-            console.log("Found stored file info, displaying it");
-            displayFileInfo(JSON.parse(storedFileInfo));
-        } catch (e) {
-            console.error('Error parsing stored file info:', e);
-        }
+      try {
+        console.log("Found stored file info, displaying it");
+        displayFileInfo(JSON.parse(storedFileInfo));
+      } catch (e) {
+        console.error("Error parsing stored file info:", e);
+      }
     }
-    
+
     // Always load from server first to ensure fresh data
     loadAnalytics();
-    
+
     // Set up the file input element
-    const fileInput = document.getElementById('excel-file');
+    const fileInput = document.getElementById("excel-file");
     if (fileInput) {
-        fileInput.addEventListener('change', function() {
-            handleFileUpload(this);
-        });
+      fileInput.addEventListener("change", function () {
+        handleFileUpload(this);
+      });
     }
-});
+  });
 
-// Drag and drop handlers
-function dragOverHandler(event) {
+  // Drag and drop handlers
+  function dragOverHandler(event) {
     event.preventDefault();
     event.stopPropagation();
-    document.getElementById('drop-area').classList.add('bg-blue-50', 'border-blue-300');
-}
+    document
+      .getElementById("drop-area")
+      .classList.add("bg-blue-50", "border-blue-300");
+  }
 
-function dragLeaveHandler(event) {
+  function dragLeaveHandler(event) {
     event.preventDefault();
     event.stopPropagation();
-    document.getElementById('drop-area').classList.remove('bg-blue-50', 'border-blue-300');
-}
+    document
+      .getElementById("drop-area")
+      .classList.remove("bg-blue-50", "border-blue-300");
+  }
 
-function dropHandler(event) {
+  function dropHandler(event) {
     event.preventDefault();
     event.stopPropagation();
-    
-    document.getElementById('drop-area').classList.remove('bg-blue-50', 'border-blue-300');
-    
+
+    document
+      .getElementById("drop-area")
+      .classList.remove("bg-blue-50", "border-blue-300");
+
     if (event.dataTransfer.items) {
-        // Use DataTransferItemList interface
-        for (let i = 0; i < event.dataTransfer.items.length; i++) {
-            if (event.dataTransfer.items[i].kind === 'file') {
-                const file = event.dataTransfer.items[i].getAsFile();
-                console.log('Dropped file:', file.name);
-                // Create a mock file input object to pass to handleFileUpload
-                handleFileUpload({ files: [file] });
-                break; // Only process the first file
-            }
+      // Use DataTransferItemList interface
+      for (let i = 0; i < event.dataTransfer.items.length; i++) {
+        if (event.dataTransfer.items[i].kind === "file") {
+          const file = event.dataTransfer.items[i].getAsFile();
+          console.log("Dropped file:", file.name);
+          // Create a mock file input object to pass to handleFileUpload
+          handleFileUpload({ files: [file] });
+          break; // Only process the first file
         }
+      }
     } else {
-        // Use DataTransfer interface
-        if (event.dataTransfer.files.length > 0) {
-            const file = event.dataTransfer.files[0];
-            console.log('Dropped file (alternative):', file.name);
-            // Create a mock file input object to pass to handleFileUpload
-            handleFileUpload({ files: [file] });
-        }
+      // Use DataTransfer interface
+      if (event.dataTransfer.files.length > 0) {
+        const file = event.dataTransfer.files[0];
+        console.log("Dropped file (alternative):", file.name);
+        // Create a mock file input object to pass to handleFileUpload
+        handleFileUpload({ files: [file] });
+      }
     }
-}
+  }
 
-// Initialize event listeners for file input
-document.addEventListener('DOMContentLoaded', function() {
+  // Initialize event listeners for file input
+  document.addEventListener("DOMContentLoaded", function () {
     // Set up the file input element
-    const fileInput = document.getElementById('excel-file');
+    const fileInput = document.getElementById("excel-file");
     if (fileInput) {
-        fileInput.addEventListener('change', function() {
-            handleFileUpload(this);
-        });
+      fileInput.addEventListener("change", function () {
+        handleFileUpload(this);
+      });
     }
-    
+
     // Load initial analytics
     loadAnalytics();
-});
+  });
 
-// Function to update dashboard with analysis data
-function updateDashboard(analysis) {
+  // Function to update dashboard with analysis data
+  function updateDashboard(analysis) {
     if (!analysis) {
-        console.error('Analysis data is undefined');
-        return;
+      console.error("Analysis data is undefined");
+      return;
     }
-    
+
     // Update overview metrics
     if (analysis.overall) {
-        document.getElementById('total-students').textContent = analysis.overall.total_rows || '-';
-        document.getElementById('pass-rate').textContent = analysis.overall.pass_percentage ? analysis.overall.pass_percentage + '%' : '-';
-        document.getElementById('avg-score').textContent = analysis.overall.average_marks ? analysis.overall.average_marks.toFixed(2) : '-';
-        document.getElementById('highest-score').textContent = analysis.overall.highest_marks || '-';
+      document.getElementById("total-students").textContent =
+        analysis.overall.total_rows || "-";
+      document.getElementById("pass-rate").textContent = analysis.overall
+        .pass_percentage
+        ? analysis.overall.pass_percentage + "%"
+        : "-";
+      document.getElementById("avg-score").textContent = analysis.overall
+        .average_marks
+        ? analysis.overall.average_marks.toFixed(2)
+        : "-";
+      document.getElementById("highest-score").textContent =
+        analysis.overall.highest_marks || "-";
     }
-    
+
     // Course breakdown section removed as requested
-    
+
     // Update student results table if available
     // Note: Backend doesn't currently provide student_results in the analysis
     // This will be handled by the loadAnalytics function after upload
-}
+  }
 
-// Load analytics data
-async function loadAnalytics() {
+  // Load analytics data
+  async function loadAnalytics() {
     console.log("Loading analytics data from server");
     showLoading();
     try {
-        const response = await fetch('/api/results/analytics/');
-        if (response.ok) {
-            analyticsData = await response.json();
-            console.log("Received analytics data:", analyticsData);
-            
-            // Store analytics data in localStorage for persistence
-            storeAnalyticsData(analyticsData);
-            
-            // Update dashboard with the data
-            updateDashboard(analyticsData);
-            
-            // Update student results table directly from the analytics data
-            if (analyticsData.student_results && Array.isArray(analyticsData.student_results)) {
-                console.log("Updating student results table from analytics data");
-                updateStudentResultsTable(analyticsData.student_results);
-            } else {
-                console.log("No student results in analytics data, trying to load separately");
-                // If no student results in analytics data, try to load separately
-                try {
-                    const studentsResponse = await fetch('/api/results/students/');
-                    if (studentsResponse.ok) {
-                        const studentsData = await studentsResponse.json();
-                        if (studentsData && Array.isArray(studentsData.students)) {
-                            console.log("Loaded student results separately:", studentsData.students.length);
-                            updateStudentResultsTable(studentsData.students);
-                            
-                            // Update the stored analytics data with student results
-                            analyticsData.student_results = studentsData.students;
-                            storeAnalyticsData(analyticsData);
-                        }
-                    }
-                } catch (studentError) {
-                    console.error("Error loading student results:", studentError);
-                }
-            }
+      const response = await fetch("/api/results/analytics/");
+      if (response.ok) {
+        analyticsData = await response.json();
+        console.log("Received analytics data:", analyticsData);
+
+        // Store analytics data in localStorage for persistence
+        storeAnalyticsData(analyticsData);
+
+        // Update dashboard with the data
+        updateDashboard(analyticsData);
+
+        // Update student results table directly from the analytics data
+        if (
+          analyticsData.student_results &&
+          Array.isArray(analyticsData.student_results)
+        ) {
+          console.log("Updating student results table from analytics data");
+          updateStudentResultsTable(analyticsData.student_results);
         } else {
-            const error = await response.json();
-            console.error("Error response from analytics API:", error);
-            showNotification('Error loading analytics: ' + error.error, 'error');
-            
-            // Try to load from localStorage as fallback
-            if (!loadStoredAnalyticsData()) {
-                console.log("No stored analytics data available as fallback");
+          console.log(
+            "No student results in analytics data, trying to load separately"
+          );
+          // If no student results in analytics data, try to load separately
+          try {
+            const studentsResponse = await fetch("/api/results/students/");
+            if (studentsResponse.ok) {
+              const studentsData = await studentsResponse.json();
+              if (studentsData && Array.isArray(studentsData.students)) {
+                console.log(
+                  "Loaded student results separately:",
+                  studentsData.students.length
+                );
+                updateStudentResultsTable(studentsData.students);
+
+                // Update the stored analytics data with student results
+                analyticsData.student_results = studentsData.students;
+                storeAnalyticsData(analyticsData);
+              }
             }
+          } catch (studentError) {
+            console.error("Error loading student results:", studentError);
+          }
         }
-    } catch (error) {
-        console.error("Exception in loadAnalytics:", error);
-        showNotification('Error loading analytics: ' + error.message, 'error');
-        
+      } else {
+        const error = await response.json();
+        console.error("Error response from analytics API:", error);
+        showNotification("Error loading analytics: " + error.error, "error");
+
         // Try to load from localStorage as fallback
         if (!loadStoredAnalyticsData()) {
-            console.log("No stored analytics data available as fallback");
+          console.log("No stored analytics data available as fallback");
         }
-    } finally {
-        hideLoading();
-    }
-}
+      }
+    } catch (error) {
+      console.error("Exception in loadAnalytics:", error);
+      showNotification("Error loading analytics: " + error.message, "error");
 
-// Update dashboard with analytics data
-function updateDashboard(data) {
+      // Try to load from localStorage as fallback
+      if (!loadStoredAnalyticsData()) {
+        console.log("No stored analytics data available as fallback");
+      }
+    } finally {
+      hideLoading();
+    }
+  }
+
+  // Update dashboard with analytics data
+  function updateDashboard(data) {
     // Update overview cards
-    document.getElementById('total-students').textContent = data.total_students || 0;
-    document.getElementById('pass-count').textContent = data.pass_count || 0;
-    document.getElementById('fail-count').textContent = data.fail_count || 0;
-    document.getElementById('average-marks').textContent = data.average_marks || 0;
+    document.getElementById("total-students").textContent =
+      data.total_students || 0;
+    document.getElementById("pass-count").textContent = data.pass_count || 0;
+    document.getElementById("fail-count").textContent = data.fail_count || 0;
+    document.getElementById("average-marks").textContent =
+      data.average_marks || 0;
 
     // Update detailed statistics
-    document.getElementById('highest-marks').textContent = data.highest_marks || 0;
-    document.getElementById('lowest-marks').textContent = data.lowest_marks || 0;
-    document.getElementById('pass-percentage').textContent = (data.pass_percentage || 0) + '%';
+    document.getElementById("highest-marks").textContent =
+      data.highest_marks || 0;
+    document.getElementById("lowest-marks").textContent =
+      data.lowest_marks || 0;
+    document.getElementById("pass-percentage").textContent =
+      (data.pass_percentage || 0) + "%";
 
     // Course breakdown section removed as requested
 
     // Only update student results table if data is available
-    if (data.student_results && Array.isArray(data.student_results) && data.student_results.length > 0) {
-        updateStudentResultsTable(data.student_results);
+    if (
+      data.student_results &&
+      Array.isArray(data.student_results) &&
+      data.student_results.length > 0
+    ) {
+      updateStudentResultsTable(data.student_results);
     }
-}
+  }
 
-// Update course breakdown section
-function updateCourseBreakdown(courses) {
-    const container = document.getElementById('course-breakdown');
-    container.innerHTML = '';
+  // Update course breakdown section
+  function updateCourseBreakdown(courses) {
+    const container = document.getElementById("course-breakdown");
+    container.innerHTML = "";
 
     if (courses.length === 0) {
-        container.innerHTML = '<p class="text-sm text-gray-500">No course data available</p>';
-        return;
+      container.innerHTML =
+        '<p class="text-sm text-gray-500">No course data available</p>';
+      return;
     }
 
-    courses.forEach(course => {
-        const courseDiv = document.createElement('div');
-        courseDiv.className = 'border rounded-lg p-3';
-        courseDiv.innerHTML = `
+    courses.forEach((course) => {
+      const courseDiv = document.createElement("div");
+      courseDiv.className = "border rounded-lg p-3";
+      courseDiv.innerHTML = `
             <div class="flex justify-between items-start mb-2">
                 <div>
                     <h4 class="font-medium text-gray-900">${course.course_code}</h4>
@@ -548,25 +763,29 @@ function updateCourseBreakdown(courses) {
                 <div>Fail: ${course.fail_count}</div>
             </div>
         `;
-        container.appendChild(courseDiv);
+      container.appendChild(courseDiv);
     });
-}
+  }
 
-// Update student results table
-function updateStudentResultsTable(students) {
-    const tbody = document.getElementById('student-results-table');
-    tbody.innerHTML = '';
+  // Update student results table
+  function updateStudentResultsTable(students) {
+    const tbody = document.getElementById("student-results-table");
+    tbody.innerHTML = "";
 
     if (students.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No student results available</td></tr>';
-        return;
+      tbody.innerHTML =
+        '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No student results available</td></tr>';
+      return;
     }
 
-    students.forEach(student => {
-        const row = document.createElement('tr');
-        const statusClass = student.status === 'Pass' ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
-        
-        row.innerHTML = `
+    students.forEach((student) => {
+      const row = document.createElement("tr");
+      const statusClass =
+        student.status === "Pass"
+          ? "text-green-600 bg-green-100"
+          : "text-red-600 bg-red-100";
+
+      row.innerHTML = `
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${student.roll_no}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${student.name}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -581,139 +800,269 @@ function updateStudentResultsTable(students) {
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${student.percentage}%</td>
         `;
-        tbody.appendChild(row);
+      tbody.appendChild(row);
     });
-}
+  }
 
-// Handle file upload
-function handleFileUpload(input) {
+  // Handle file upload
+  function handleFileUpload(input) {
     let file;
-    
+
     // Check if input is from file input or drag and drop
     if (input.files) {
-        // From file input
-        file = input.files[0];
-        if (!file) return;
+      // From file input
+      file = input.files[0];
+      if (!file) return;
     } else {
-        console.error('Invalid input for file upload');
-        return;
+      console.error("Invalid input for file upload");
+      return;
     }
 
     // Log file information for debugging
-    console.log('File selected:', file.name, file.type, file.size);
+    console.log("File selected:", file.name, file.type, file.size);
 
     // Validate file type - accept any Excel file type
     const fileName = file.name.toLowerCase();
-    if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
-        showNotification('Please select a valid Excel file (.xlsx or .xls)', 'error');
-        return;
+    if (!fileName.endsWith(".xlsx") && !fileName.endsWith(".xls")) {
+      showNotification(
+        "Please select a valid Excel file (.xlsx or .xls)",
+        "error"
+      );
+      return;
     }
 
     // Show upload progress
-    document.getElementById('upload-progress').classList.remove('hidden');
+    document.getElementById("upload-progress").classList.remove("hidden");
 
     // Upload file
     const formData = new FormData();
-    formData.append('excel_file', file);
+    formData.append("excel_file", file);
 
     // Log the FormData for debugging
-    console.log('Uploading file:', file.name);
+    console.log("Uploading file:", file.name);
 
-    fetch('/api/results/upload/', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': getCSRFToken()
-            // Don't set Content-Type header, let the browser set it with the boundary
-        }
+    fetch("/api/results/upload/", {
+      method: "POST",
+      body: formData,
+      headers: {
+        "X-CSRFToken": getCSRFToken(),
+        // Don't set Content-Type header, let the browser set it with the boundary
+      },
     })
-    .then(response => response.json())
-    .then(data => {
-        document.getElementById('upload-progress').classList.add('hidden');
-        console.log('Server response:', data);
-        
+      .then((response) => response.json())
+      .then((data) => {
+        document.getElementById("upload-progress").classList.add("hidden");
+        console.log("Server response:", data);
+
         if (data && data.success) {
-            showNotification(data.message || 'Upload successful', 'success');
-            
-            // If analysis data is available, update the dashboard immediately
-            try {
-                if (data.analysis) {
-                    console.log('Received analysis data:', data.analysis);
-                    // Store file information
-                    storeFileInfo(file.name);
-                    // Store analytics data
-                    storeAnalyticsData(data.analysis);
-                    // Update dashboard
-                    updateDashboard(data.analysis);
-                    showNotification('File analyzed successfully! Dashboard updated with the latest data.', 'success');
-                } else {
-                    console.log('No analysis data received, refreshing from server');
-                    // Otherwise, refresh analytics from the server
-                    loadAnalytics();
-                }
-            } catch (err) {
-                console.error('Error updating dashboard:', err);
-                // Fall back to loading analytics from server
-                loadAnalytics();
+          showNotification(data.message || "Upload successful", "success");
+
+          // If analysis data is available, update the dashboard immediately
+          try {
+            if (data.analysis) {
+              console.log("Received analysis data:", data.analysis);
+              // Store file information
+              storeFileInfo(file.name);
+              // Store analytics data
+              storeAnalyticsData(data.analysis);
+              // Update dashboard
+              updateDashboard(data.analysis);
+              showNotification(
+                "File analyzed successfully! Dashboard updated with the latest data.",
+                "success"
+              );
+            } else {
+              console.log("No analysis data received, refreshing from server");
+              // Otherwise, refresh analytics from the server
+              loadAnalytics();
             }
+          } catch (err) {
+            console.error("Error updating dashboard:", err);
+            // Fall back to loading analytics from server
+            loadAnalytics();
+          }
         } else {
-            showNotification('Upload failed: ' + (data && data.error ? data.error : 'Unknown error'), 'error');
+          showNotification(
+            "Upload failed: " +
+              (data && data.error ? data.error : "Unknown error"),
+            "error"
+          );
         }
-    })
-    .catch(error => {
-        document.getElementById('upload-progress').classList.add('hidden');
-        showNotification('Upload failed: ' + error.message, 'error');
-    });
+      })
+      .catch((error) => {
+        document.getElementById("upload-progress").classList.add("hidden");
+        showNotification("Upload failed: " + error.message, "error");
+      });
 
     // Reset file input if it's a DOM element
     if (input.value !== undefined) {
-        input.value = '';
+      input.value = "";
     }
-}
+  }
 
-// Download template
-function downloadTemplate() {
-    window.open('/api/results/template/', '_blank');
-}
+  // Download template
+  function downloadTemplate() {
+    window.open("/api/results/template/", "_blank");
+  }
 
-// Download analysis Excel file
-function downloadAnalysisExcel() {
-    window.open('/api/results/download-analysis/', '_blank');
-}
+  // Download analysis Excel file
+  function downloadAnalysisExcel() {
+    window.open("/api/results/download-analysis/", "_blank");
+  }
 
-// Download student results
-function downloadStudentResults() {
-    window.open('/api/results/download-students/', '_blank');
-}
+  // Download student results
+  function downloadStudentResults() {
+    window.open("/api/results/download-students/", "_blank");
+  }
 
-// Refresh analytics
-function refreshAnalytics() {
+  // Refresh analytics
+  function refreshAnalytics() {
     loadAnalytics();
-}
+  }
 
-// Show loading overlay
-function showLoading() {
-    document.getElementById('loading-overlay').classList.remove('hidden');
-}
+  // Show loading overlay
+  function showLoading() {
+    document.getElementById("loading-overlay").classList.remove("hidden");
+  }
 
-// Hide loading overlay
-function hideLoading() {
-    document.getElementById('loading-overlay').classList.add('hidden');
-}
+  // Hide loading overlay
+  function hideLoading() {
+    document.getElementById("loading-overlay").classList.add("hidden");
+  }
 
-// Get CSRF token
-function getCSRFToken() {
-    const token = document.querySelector('[name=csrfmiddlewaretoken]');
-    return token ? token.value : '';
-}
+  // Get CSRF token
+  function getCSRFToken() {
+    const token = document.querySelector("[name=csrfmiddlewaretoken]");
+    return token ? token.value : "";
+  }
 
-// Show notification
-function showNotification(message, type = 'info') {
+  // Show notification
+  function showNotification(message, type = "info") {
     if (window.FacultyPortal && window.FacultyPortal.showNotification) {
-        window.FacultyPortal.showNotification(message, type);
+      window.FacultyPortal.showNotification(message, type);
     } else {
-        alert(message);
+      alert(message);
     }
-}
+  }
+
+  // View detailed results for a specific subject and year
+  function viewDetailedResults(subjectId, academicYear) {
+    // Create a modal or redirect to a detailed view
+    // For now, we'll create a simple modal with the results data
+    showLoading();
+
+    fetch(`/api/results/subject/${subjectId}/year/${academicYear}/`, {
+      method: "GET",
+      headers: {
+        "X-CSRFToken": getCSRFToken(),
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        hideLoading();
+        if (data.success) {
+          displayDetailedResultsModal(data.results, academicYear);
+        } else {
+          showNotification(
+            "Failed to load detailed results: " + data.error,
+            "error"
+          );
+        }
+      })
+      .catch((error) => {
+        hideLoading();
+        showNotification(
+          "Error loading detailed results: " + error.message,
+          "error"
+        );
+      });
+  }
+
+  // Display detailed results in a modal
+  function displayDetailedResultsModal(results, academicYear) {
+    // Create modal HTML
+    const modalHTML = `
+        <div id="results-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-gray-900">Detailed Results - ${academicYear}</h3>
+                        <button onclick="closeResultsModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="max-h-96 overflow-y-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Roll No</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Marks</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                ${results
+                                  .map(
+                                    (result) => `
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${
+                                          result.student_roll
+                                        }</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${
+                                          result.student_name
+                                        }</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${
+                                          result.marks_obtained
+                                        }/${result.total_marks}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                              result.status === "Pass"
+                                                ? "bg-green-100 text-green-800"
+                                                : "bg-red-100 text-red-800"
+                                            }">
+                                                ${result.status}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${
+                                          result.percentage
+                                        }%</td>
+                                    </tr>
+                                `
+                                  )
+                                  .join("")}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-4 flex justify-end space-x-2">
+                        <button onclick="closeResultsModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">Close</button>
+                        <button onclick="exportResults('${academicYear}')" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                            <i class="fas fa-download mr-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Add modal to page
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
+  }
+
+  // Close detailed results modal
+  function closeResultsModal() {
+    const modal = document.getElementById("results-modal");
+    if (modal) {
+      modal.remove();
+    }
+  }
+
+  // Export results for a specific year
+  function exportResults(academicYear) {
+    // Implement export functionality
+    showNotification("Export functionality will be implemented soon", "info");
+  }
 </script>
 {% endblock %}

@@ -1,0 +1,235 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Marks Entry - Faculty Portal{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+  <!-- Top Navigation -->
+  <nav class="bg-white shadow-sm border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
+              <i class="fas fa-graduation-cap text-white text-sm"></i>
+            </div>
+          </div>
+          <div class="ml-4">
+            <h1 class="text-xl font-semibold text-gray-900">Marks Entry</h1>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <div class="text-sm text-gray-700">
+            <span class="font-medium">{{ faculty.user.get_full_name|default:faculty.user.username }}</span>
+            <span class="text-gray-500">({{ faculty.department }})</span>
+          </div>
+          <a href="{% url 'logout' %}" class="text-gray-600 hover:text-gray-800 transition duration-150">
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="flex">
+    <!-- Sidebar -->
+    <div class="w-64 bg-white shadow-sm min-h-screen">
+      <nav class="mt-8">
+        <div class="px-4 space-y-2">
+          <a href="{% url 'subjectspage' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition duration-150">
+            <i class="fas fa-home mr-3"></i>
+            Home
+          </a>
+          <a href="{% url 'dashboard' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition duration-150">
+            <i class="fas fa-tachometer-alt mr-3"></i>
+            Dashboard
+          </a>
+          <a href="{% url 'results' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition duration-150">
+            <i class="fas fa-chart-bar mr-3"></i>
+            Results
+          </a>
+          <a href="{% url 'marks_entry' %}" class="flex items-center px-4 py-3 text-blue-700 bg-blue-50 rounded-lg">
+            <i class="fas fa-edit mr-3"></i>
+            Marks Entry
+          </a>
+          <a href="{% url 'co_attainment' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition duration-150">
+            <i class="fas fa-target mr-3"></i>
+            CO Attainment
+          </a>
+          <a href="{% url 'co_po_mapping' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition duration-150">
+            <i class="fas fa-sitemap mr-3"></i>
+            CO-PO Mapping
+          </a>
+        </div>
+      </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 p-8">
+      <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold text-gray-900 mb-2">Marks Entry</h2>
+          <p class="text-gray-600">Enter and manage student marks for your selected subject.</p>
+        </div>
+
+        <!-- Current Selection -->
+        {% if selected_subject %}
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Current Selection</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-blue-50 rounded-lg p-4">
+              <div class="flex items-center">
+                <i class="fas fa-calendar-alt text-blue-600 mr-3"></i>
+                <div>
+                  <p class="text-sm text-gray-600">Year</p>
+                  <p class="font-semibold text-gray-900">{{ selected_year }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="bg-green-50 rounded-lg p-4">
+              <div class="flex items-center">
+                <i class="fas fa-book text-green-600 mr-3"></i>
+                <div>
+                  <p class="text-sm text-gray-600">Scheme</p>
+                  <p class="font-semibold text-gray-900">{{ selected_scheme }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="bg-purple-50 rounded-lg p-4">
+              <div class="flex items-center">
+                <i class="fas fa-building text-purple-600 mr-3"></i>
+                <div>
+                  <p class="text-sm text-gray-600">Department</p>
+                  <p class="font-semibold text-gray-900">{{ selected_department.name }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="bg-orange-50 rounded-lg p-4">
+              <div class="flex items-center">
+                <i class="fas fa-book-open text-orange-600 mr-3"></i>
+                <div>
+                  <p class="text-sm text-gray-600">Subject</p>
+                  <p class="font-semibold text-gray-900">{{ selected_subject.name }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Excel Upload Section -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="text-center py-12">
+            <i class="fas fa-file-excel text-green-500 text-6xl mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Upload Student Marks</h3>
+            <p class="text-gray-600 mb-6">Upload an Excel file with student marks data</p>
+            
+            <!-- Download Template Button -->
+            <div class="mb-6">
+              <a href="{% url 'download_marks_template' %}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-150">
+                <i class="fas fa-download mr-2"></i>Download Template
+              </a>
+            </div>
+            
+            <!-- Upload Form -->
+            <form id="marksUploadForm" enctype="multipart/form-data" class="max-w-md mx-auto">
+              {% csrf_token %}
+              <div class="mb-4">
+                <label for="excelFile" class="block text-sm font-medium text-gray-700 mb-2">Select Excel File</label>
+                <input type="file" id="excelFile" name="excel_file" accept=".xlsx,.xls" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" required>
+              </div>
+              
+              <button type="submit" class="w-full bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition duration-150">
+                <i class="fas fa-upload mr-2"></i>Upload Marks
+              </button>
+            </form>
+            
+            <!-- Upload Status -->
+            <div id="uploadStatus" class="mt-4 hidden">
+              <div class="bg-green-50 border border-green-200 rounded-md p-4">
+                <div class="flex">
+                  <div class="flex-shrink-0">
+                    <i class="fas fa-check-circle text-green-400"></i>
+                  </div>
+                  <div class="ml-3">
+                    <h3 class="text-sm font-medium text-green-800">Upload Successful!</h3>
+                    <div class="mt-2 text-sm text-green-700">
+                      <p id="uploadMessage"></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="text-center py-12">
+            <i class="fas fa-exclamation-triangle text-yellow-500 text-6xl mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No Subject Selected</h3>
+            <p class="text-gray-600">Please select a subject first to enter marks.</p>
+            <a href="{% url 'selection' %}" class="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-150">
+              <i class="fas fa-cog mr-2"></i>Go to Selection
+            </a>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('marksUploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const fileInput = document.getElementById('excelFile');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const uploadMessage = document.getElementById('uploadMessage');
+    
+    if (!fileInput.files[0]) {
+        alert('Please select a file to upload.');
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading...';
+    submitBtn.disabled = true;
+    
+    fetch('{% url "upload_marks_excel" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            uploadMessage.textContent = data.message;
+            uploadStatus.classList.remove('hidden');
+            fileInput.value = ''; // Clear file input
+        } else {
+            alert('Error: ' + (data.error || 'Upload failed'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Upload failed. Please try again.');
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+});
+</script>
+{% endblock %}

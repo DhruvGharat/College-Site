@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
-from .models import Faculty, Department, Subject, Student, Result, FacultySelection, COPO
+from .models import Faculty, Department, Subject, Student, Result, FacultySelection, COPO, PredefinedSubject
 
 
 # Custom User Admin to show Faculty info
@@ -73,6 +73,14 @@ class COPOAdmin(admin.ModelAdmin):
     list_filter = ('subject',)
     search_fields = ('subject__name', 'co_number', 'co_description')
     ordering = ('subject', 'co_number')
+
+
+@admin.register(PredefinedSubject)
+class PredefinedSubjectAdmin(admin.ModelAdmin):
+    list_display = ('name', 'department', 'active', 'created_at')
+    list_filter = ('department', 'active')
+    search_fields = ('name', 'department__name')
+    ordering = ('department', 'name')
 
 
 # Customize admin site

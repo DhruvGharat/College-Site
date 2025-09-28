@@ -36,13 +36,9 @@
         class="space-y-6"
       >
         {% csrf_token %}
-        <!-- Department Dropdown -->
+        <!-- Department Dropdown (Fixed List) -->
         <div>
-          <label
-            for="department"
-            class="block text-sm font-medium text-gray-700 mb-1"
-            >Department</label
-          >
+          <label for="department" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
           <select
             id="department"
             name="department"
@@ -50,23 +46,46 @@
             class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           >
             <option value="" disabled selected>Select a Department</option>
+            {# Hard-coded department options (IDs must match DB). If IDs differ, adjust values accordingly. #}
             {% for dep in departments %}
-            <option value="{{ dep.id }}">{{ dep.name }}</option>
+              <option value="{{ dep.id }}">{{ dep.name }}</option>
             {% endfor %}
           </select>
         </div>
 
-        <!-- Year Input (Textbox) -->
+        <!-- Academic Year Dropdown (Range Format) -->
         <div>
-          <label for="year" class="block text-sm font-medium text-gray-700 mb-1">Year</label>
-          <input
-            type="text"
+          <label for="year" class="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
+          <select
             id="year"
             name="year"
             required
-            placeholder="Enter year "
-            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          />
+            class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+            <option value="" disabled selected>Select Academic Year</option>
+            {# Academic year options hard-coded #}
+            {% comment %} Hard-coded list for clarity {% endcomment %}
+            <option value="2005-2006">2005-2006</option>
+            <option value="2006-2007">2006-2007</option>
+            <option value="2007-2008">2007-2008</option>
+            <option value="2008-2009">2008-2009</option>
+            <option value="2009-2010">2009-2010</option>
+            <option value="2010-2011">2010-2011</option>
+            <option value="2011-2012">2011-2012</option>
+            <option value="2012-2013">2012-2013</option>
+            <option value="2013-2014">2013-2014</option>
+            <option value="2014-2015">2014-2015</option>
+            <option value="2015-2016">2015-2016</option>
+            <option value="2016-2017">2016-2017</option>
+            <option value="2017-2018">2017-2018</option>
+            <option value="2018-2019">2018-2019</option>
+            <option value="2019-2020">2019-2020</option>
+            <option value="2020-2021">2020-2021</option>
+            <option value="2021-2022">2021-2022</option>
+            <option value="2022-2023">2022-2023</option>
+            <option value="2023-2024">2023-2024</option>
+            <option value="2024-2025">2024-2025</option>
+          </select>
         </div>
 
         <!-- Scheme Dropdown -->
@@ -89,21 +108,18 @@
           </select>
         </div>
 
-        <!-- Subject Name Input -->
+        <!-- Subject Name Dropdown (conditional) -->
         <div>
-          <label
-            for="subjectName"
-            class="block text-sm font-medium text-gray-700 mb-1"
-            >Subject Name</label
-          >
-          <input
-            type="text"
+          <label for="subjectName" class="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
+          <select
             id="subjectName"
             name="subjectName"
             required
-            placeholder="e.g., Data Structures"
-            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          />
+            class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+            <option value="" disabled selected>Select a Subject</option>
+          </select>
+          <p id="subjectHint" class="mt-1 text-xs text-gray-500">Subjects will appear when 'Information Technology' is selected.</p>
         </div>
 
         <!-- Subject Code Input -->
@@ -143,5 +159,38 @@
         </a>
       </div>
     </div>
+    <script>
+      // Subject options for Information Technology
+  const predefinedSubjects = JSON.parse('{{ predefined_subjects_json|safe|escapejs }}');
+
+      const deptSelect = document.getElementById('department');
+      const subjectSelect = document.getElementById('subjectName');
+      const subjectHint = document.getElementById('subjectHint');
+
+      function populateSubjects() {
+        const selectedText = deptSelect.options[deptSelect.selectedIndex]?.text || '';
+        // Clear current
+        subjectSelect.innerHTML = '<option value="" disabled selected>Select a Subject</option>';
+        if (selectedText === 'Information Technology') {
+          const deptId = deptSelect.value;
+          const list = predefinedSubjects[deptId] || [];
+          list.forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            subjectSelect.appendChild(opt);
+          });
+          subjectSelect.disabled = false;
+          subjectHint.textContent = 'Select one of the predefined subjects.';
+        } else {
+          subjectSelect.disabled = true;
+          subjectHint.textContent = 'Subjects available only for Information Technology currently.';
+        }
+      }
+
+      deptSelect.addEventListener('change', populateSubjects);
+      // Initialize state
+      populateSubjects();
+    </script>
   </body>
 </html>

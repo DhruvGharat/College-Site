@@ -45,12 +45,28 @@ class Subject(models.Model):
     scheme = models.CharField(max_length=20, choices=SCHEME_CHOICES)
     credits = models.IntegerField(default=3)
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, null=True, blank=True)
+    # New optional academic session range e.g. "2005-2006" if provided via UI
+    academic_year = models.CharField(max_length=9, blank=True, help_text="Academic session like 2005-2006")
     
     class Meta:
-        unique_together = ['code', 'year', 'scheme']
+        # Removed unique_together constraint to allow duplicate subject codes
+        pass
     
     def __str__(self):
-        return f"{self.name} ({self.code}) - {self.get_year_display()}"
+        return f"{self.name} ({self.code}) - {self.display_year}"
+
+    @property
+    def display_year(self):
+        """Return academic_year range if set, else the standard year display.
+
+        This lets templates uniformly reference s.display_year and get either
+        the custom academic session (e.g. 2010-2011) or the ordinal year label
+        (e.g. 1st Year) when no range was captured.
+        """
+        if self.academic_year:
+            return self.academic_year
+        # Fallback to Django's choice display for the numeric year
+        return self.get_year_display()
 
 
 class Student(models.Model):
@@ -120,3 +136,18 @@ class FacultySelection(models.Model):
     
     def __str__(self):
         return f"{self.faculty.user.get_full_name()} - {self.get_year_display()} {self.scheme}"
+
+
+class PredefinedSubject(models.Model):
+    """Stores predefined subject names per department so UI can populate dynamically."""
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='predefined_subjects')
+    name = models.CharField(max_length=200)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['department', 'name']
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.department.name} - {self.name}"

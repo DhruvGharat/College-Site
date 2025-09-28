@@ -1,0 +1,124 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Subject Details - {{ subject.name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Back button -->
+    <div class="mb-4">
+        <a href="{% url 'results' %}" class="text-blue-600 hover:text-blue-800">
+            <i class="fas fa-arrow-left mr-2"></i> Back to Results Dashboard
+        </a>
+    </div>
+
+    <!-- Subject Header -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">{{ subject.name }}</h1>
+                <p class="text-gray-600">{{ subject.code }} | {{ subject.department.name }}</p>
+                {% if year %}
+                    <div class="mt-2 inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                        <i class="fas fa-calendar-alt mr-1"></i> {{ year }} Academic Year
+                    </div>
+                {% endif %}
+            </div>
+            <div class="mt-4 md:mt-0">
+                <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-lg text-sm">
+                    Scheme: {{ subject.scheme }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Section -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Performance Analytics</h2>
+        
+        {% if analytics %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Total Students -->
+                <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                    <p class="text-sm text-gray-500">Total Students</p>
+                    <p class="text-2xl font-bold text-blue-700">{{ analytics.total_students }}</p>
+                </div>
+                
+                <!-- Passing Rate -->
+                <div class="bg-green-50 rounded-lg p-4 border border-green-100">
+                    <p class="text-sm text-gray-500">Passing Rate</p>
+                    <p class="text-2xl font-bold text-green-700">{{ analytics.passing_percentage|floatformat:1 }}%</p>
+                    <p class="text-sm text-gray-500">{{ analytics.passing_students }} of {{ analytics.total_students }} students</p>
+                </div>
+                
+                <!-- Average Marks -->
+                <div class="bg-purple-50 rounded-lg p-4 border border-purple-100">
+                    <p class="text-sm text-gray-500">Average Marks</p>
+                    <p class="text-2xl font-bold text-purple-700">{{ analytics.average_marks|floatformat:1 }}</p>
+                </div>
+                
+                <!-- Highest Marks -->
+                <div class="bg-yellow-50 rounded-lg p-4 border border-yellow-100">
+                    <p class="text-sm text-gray-500">Highest Marks</p>
+                    <p class="text-2xl font-bold text-yellow-700">{{ analytics.highest_marks }}</p>
+                </div>
+                
+                <!-- Lowest Marks -->
+                <div class="bg-red-50 rounded-lg p-4 border border-red-100">
+                    <p class="text-sm text-gray-500">Lowest Marks</p>
+                    <p class="text-2xl font-bold text-red-700">{{ analytics.lowest_marks }}</p>
+                </div>
+            </div>
+        {% else %}
+            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <p class="text-gray-600">No analytics data available for this subject.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Results Table -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Student Results</h2>
+        
+        {% if results %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="py-3 px-4 text-left text-sm font-medium text-gray-600">Roll Number</th>
+                            <th class="py-3 px-4 text-left text-sm font-medium text-gray-600">Student Name</th>
+                            <th class="py-3 px-4 text-left text-sm font-medium text-gray-600">Marks</th>
+                            <th class="py-3 px-4 text-left text-sm font-medium text-gray-600">Total</th>
+                            <th class="py-3 px-4 text-left text-sm font-medium text-gray-600">Percentage</th>
+                            <th class="py-3 px-4 text-left text-sm font-medium text-gray-600">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for result in results %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="py-3 px-4 text-sm text-gray-800">{{ result.student.roll_number }}</td>
+                                <td class="py-3 px-4 text-sm text-gray-800">{{ result.student.name }}</td>
+                                <td class="py-3 px-4 text-sm text-gray-800">{{ result.marks_obtained }}</td>
+                                <td class="py-3 px-4 text-sm text-gray-800">{{ result.total_marks }}</td>
+                                <td class="py-3 px-4 text-sm text-gray-800">
+                                    {{ result.marks_obtained|divisibleby:result.total_marks|floatformat:1 }}%
+                                </td>
+                                <td class="py-3 px-4 text-sm">
+                                    {% if result.marks_obtained >= result.total_marks|multiply:0.4 %}
+                                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Pass</span>
+                                    {% else %}
+                                        <span class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Fail</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <p class="text-gray-600">No student results available for this subject.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
